@@ -1,0 +1,27 @@
+## Android Studio / Gradle
+android-app/.gradle/
+android-app/.idea/
+android-app/local.properties
+android-app/build/
+android-app/*/build/
+android-app/captures/
+android-app/.externalNativeBuild/
+android-app/.cxx/
+android-app/*.iml
+
+## Spring Boot / Gradle (backend)
+backend/.gradle/
+backend/.idea/
+backend/build/
+backend/out/
+backend/*.iml
+backend/HELP.md
+
+## Environment / secrets
+**/application-local.properties
+**/application-local.yml
+*.env
+
+## OS files
+.DS_Store
+Thumbs.db
