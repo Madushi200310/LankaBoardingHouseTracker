@@ -25,3 +25,9 @@ backend/HELP.md
 ## OS files
 .DS_Store
 Thumbs.db
+
+## Android Studio project-level (root)
+.idea/
+*.iml
+local.properties
+**/local.properties
