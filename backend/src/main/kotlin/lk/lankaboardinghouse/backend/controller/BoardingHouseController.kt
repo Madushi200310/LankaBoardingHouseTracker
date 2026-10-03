@@ -31,6 +31,11 @@ class BoardingHouseController(
         status = b.status
     )
 
+    // Admin/debug: view ALL boarding houses regardless of status
+    @GetMapping
+    fun getAll(): List<BoardingHouseResponseDto> =
+        boardingHouseRepository.findAll().map { toDto(it) }
+
     // Owner submits a new listing request (status = PENDING)
     @PostMapping("/request")
     fun submitRequest(@RequestBody dto: BoardingHouseRequestDto): BoardingHouseResponseDto {
