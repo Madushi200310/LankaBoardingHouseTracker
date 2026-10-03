@@ -1,0 +1,10 @@
+[33mcommit a2a9dad136552622b8b45106784ee7d4e2b88479[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Madushi200310 <wijesekarahansi85@gmail.com>
+Date:   Mon Aug 31 01:23:12 2026 +0530
+
+    update
+    
+    Updated README.md to include project structure, architecture, roles, and features for the Lanka Boarding House Tracker.
+
+ README.md | 49 [32m++++++++++++++++++++++++++++[m[31m---------------------[m
+ 1 file changed, 28 insertions(+), 21 deletions(-)
