@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.lk.lankaboardinghouse.android.data.model.UserResponse
+import com.lk.lankaboardinghouse.android.data.session.SessionManager
 import com.lk.lankaboardinghouse.android.ui.admin.AdminDashboardScreen
 import com.lk.lankaboardinghouse.android.ui.login.LoginScreen
 import com.lk.lankaboardinghouse.android.ui.owner.OwnerDashboardScreen
@@ -24,21 +25,26 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { user ->
+                    SessionManager.currentUser = user
                     navigateToDashboard(navController, user)
                 }
             )
         }
 
         composable(Screen.AdminDashboard.route) {
-            AdminDashboardScreen(fullName = "Admin")
+            AdminDashboardScreen(fullName = SessionManager.currentUser?.fullName ?: "Admin")
         }
 
         composable(Screen.OwnerDashboard.route) {
-            OwnerDashboardScreen(fullName = "Owner")
+            val user = SessionManager.currentUser
+            OwnerDashboardScreen(
+                ownerId = user?.id ?: 0L,
+                fullName = user?.fullName ?: "Owner"
+            )
         }
 
         composable(Screen.UserDashboard.route) {
-            UserDashboardScreen(fullName = "User")
+            UserDashboardScreen(fullName = SessionManager.currentUser?.fullName ?: "User")
         }
     }
 }
