@@ -11,6 +11,7 @@ import com.lk.lankaboardinghouse.android.data.session.SessionManager
 import com.lk.lankaboardinghouse.android.ui.admin.AdminDashboardScreen
 import com.lk.lankaboardinghouse.android.ui.login.LoginScreen
 import com.lk.lankaboardinghouse.android.ui.owner.OwnerDashboardScreen
+import com.lk.lankaboardinghouse.android.ui.register.RegisterScreen
 import com.lk.lankaboardinghouse.android.ui.user.UserDashboardScreen
 
 @Composable
@@ -27,6 +28,21 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 onLoginSuccess = { user ->
                     SessionManager.currentUser = user
                     navigateToDashboard(navController, user)
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
+                }
+            )
+        }
+
+        composable(Screen.Register.route) {
+            RegisterScreen(
+                onRegisterSuccess = { user ->
+                    SessionManager.currentUser = user
+                    navigateToDashboard(navController, user)
+                },
+                onBackToLogin = {
+                    navController.popBackStack()
                 }
             )
         }

@@ -10,6 +10,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import com.lk.lankaboardinghouse.android.data.model.UserResponse
 @Composable
 fun LoginScreen(
     onLoginSuccess: (UserResponse) -> Unit,
+    onNavigateToRegister: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel()
 ) {
@@ -89,6 +91,13 @@ fun LoginScreen(
                 .padding(top = 16.dp)
         ) {
             Text("Login")
+        }
+
+        TextButton(
+            onClick = onNavigateToRegister,
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text("Don't have an account? Register")
         }
     }
 }
