@@ -20,5 +20,6 @@ data class UserResponseDto(
     val fullName: String,
     val email: String,
     val phoneNumber: String,
-    val role: Role
+    val role: Role,
+    val token: String
 )
