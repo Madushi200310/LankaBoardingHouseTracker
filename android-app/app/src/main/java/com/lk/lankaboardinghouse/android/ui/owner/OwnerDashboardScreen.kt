@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,9 +17,11 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +29,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,6 +39,7 @@ import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 fun OwnerDashboardScreen(
     ownerId: Long,
     fullName: String,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OwnerViewModel = viewModel()
 ) {
@@ -46,11 +51,21 @@ fun OwnerDashboardScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Welcome, $fullName",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Welcome, $fullName",
+                style = MaterialTheme.typography.titleMedium
+            )
+            TextButton(onClick = onLogout) {
+                Text("Logout")
+            }
+        }
 
         TabRow(selectedTabIndex = selectedTab) {
             tabs.forEachIndexed { index, title ->
@@ -118,42 +133,41 @@ private fun AddNewListingTab(ownerId: Long, viewModel: OwnerViewModel) {
 
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         item {
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = viewModel.title,
                 onValueChange = { viewModel.title = it },
                 label = { Text("Title") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = viewModel.description,
                 onValueChange = { viewModel.description = it },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = viewModel.rulesAndRegulations,
                 onValueChange = { viewModel.rulesAndRegulations = it },
                 label = { Text("Rules and Regulations") },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = viewModel.price,
                 onValueChange = { viewModel.price = it },
                 label = { Text("Price (Rs. per month)") },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = viewModel.addressLine,
                 onValueChange = { viewModel.addressLine = it },
                 label = { Text("Address") },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
-            // District dropdown (simple Box + DropdownMenu)
             Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 OutlinedButton(
                     onClick = { districtExpanded = true },
@@ -177,7 +191,6 @@ private fun AddNewListingTab(ownerId: Long, viewModel: OwnerViewModel) {
                 }
             }
 
-            // Town dropdown (simple Box + DropdownMenu)
             Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 OutlinedButton(
                     onClick = { if (viewModel.towns.isNotEmpty()) townExpanded = true },

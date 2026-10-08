@@ -16,6 +16,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,15 +27,26 @@ import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 @Composable
 fun AdminDashboardScreen(
     fullName: String,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AdminViewModel = viewModel()
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Admin Dashboard",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Admin Dashboard",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            TextButton(onClick = onLogout) {
+                Text("Logout")
+            }
+        }
         Text(
             text = "Welcome, $fullName",
             style = MaterialTheme.typography.bodyMedium,

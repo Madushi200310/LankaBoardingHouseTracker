@@ -20,6 +20,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 @Composable
 fun UserDashboardScreen(
     fullName: String,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: UserViewModel = viewModel()
 ) {
@@ -42,11 +44,21 @@ fun UserDashboardScreen(
     var townExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Find a Boarding House",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Find a Boarding House",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            TextButton(onClick = onLogout) {
+                Text("Logout")
+            }
+        }
         Text(
             text = "Welcome, $fullName",
             style = MaterialTheme.typography.bodyMedium,

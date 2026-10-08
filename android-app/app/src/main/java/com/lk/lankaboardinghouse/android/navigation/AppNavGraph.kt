@@ -48,19 +48,26 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         }
 
         composable(Screen.AdminDashboard.route) {
-            AdminDashboardScreen(fullName = SessionManager.currentUser?.fullName ?: "Admin")
+            AdminDashboardScreen(
+                fullName = SessionManager.currentUser?.fullName ?: "Admin",
+                onLogout = { logout(navController) }
+            )
         }
 
         composable(Screen.OwnerDashboard.route) {
             val user = SessionManager.currentUser
             OwnerDashboardScreen(
                 ownerId = user?.id ?: 0L,
-                fullName = user?.fullName ?: "Owner"
+                fullName = user?.fullName ?: "Owner",
+                onLogout = { logout(navController) }
             )
         }
 
         composable(Screen.UserDashboard.route) {
-            UserDashboardScreen(fullName = SessionManager.currentUser?.fullName ?: "User")
+            UserDashboardScreen(
+                fullName = SessionManager.currentUser?.fullName ?: "User",
+                onLogout = { logout(navController) }
+            )
         }
     }
 }
@@ -75,5 +82,12 @@ private fun navigateToDashboard(navController: NavHostController, user: UserResp
 
     navController.navigate(destination) {
         popUpTo(Screen.Login.route) { inclusive = true }
+    }
+}
+
+private fun logout(navController: NavHostController) {
+    SessionManager.clear()
+    navController.navigate(Screen.Login.route) {
+        popUpTo(0) { inclusive = true }
     }
 }
