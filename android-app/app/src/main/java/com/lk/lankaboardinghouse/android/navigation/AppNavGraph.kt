@@ -1,7 +1,10 @@
 package com.lk.lankaboardinghouse.android.navigation
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,6 +20,16 @@ import com.lk.lankaboardinghouse.android.ui.user.UserDashboardScreen
 @Composable
 fun AppNavGraph(modifier: Modifier = Modifier) {
     val navController: NavHostController = rememberNavController()
+    val context = LocalContext.current
+
+    // If the network layer flags an expired/invalid token, send the user back to login
+    LaunchedEffect(SessionManager.sessionExpired) {
+        if (SessionManager.sessionExpired) {
+            SessionManager.sessionExpired = false
+            Toast.makeText(context, "Session expired. Please log in again.", Toast.LENGTH_LONG).show()
+            logout(navController)
+        }
+    }
 
     NavHost(
         navController = navController,
