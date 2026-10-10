@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,6 +20,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
@@ -42,6 +45,7 @@ fun UserDashboardScreen(
 ) {
     var districtExpanded by remember { mutableStateOf(false) }
     var townExpanded by remember { mutableStateOf(false) }
+    var sortExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -111,6 +115,65 @@ fun UserDashboardScreen(
                     }
                 }
             }
+
+            // Filters appear once a town is chosen
+            if (viewModel.selectedTown != null) {
+                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    OutlinedTextField(
+                        value = viewModel.minPrice,
+                        onValueChange = { viewModel.minPrice = it },
+                        label = { Text("Min Rs.") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = viewModel.maxPrice,
+                        onValueChange = { viewModel.maxPrice = it },
+                        label = { Text("Max Rs.") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedButton(
+                            onClick = { sortExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(viewModel.sortOption.label)
+                        }
+                        DropdownMenu(
+                            expanded = sortExpanded,
+                            onDismissRequest = { sortExpanded = false }
+                        ) {
+                            SortOption.entries.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    onClick = {
+                                        viewModel.onSortSelected(option)
+                                        sortExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = { viewModel.search() },
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text("Apply")
+                    }
+                    TextButton(onClick = { viewModel.clearFilters() }) {
+                        Text("Clear")
+                    }
+                }
+            }
         }
 
         when {
@@ -132,12 +195,19 @@ fun UserDashboardScreen(
             }
             viewModel.hasSearched && viewModel.searchResults.isEmpty() -> {
                 Text(
-                    text = "No boarding houses found in this town.",
+                    text = "No boarding houses match your search.",
                     modifier = Modifier.padding(16.dp)
                 )
             }
             viewModel.searchResults.isNotEmpty() -> {
                 LazyColumn(contentPadding = PaddingValues(16.dp)) {
+                    item {
+                        Text(
+                            text = "${viewModel.searchResults.size} boarding house(s) found",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                     items(viewModel.searchResults) { listing ->
                         SearchResultCard(listing)
                     }

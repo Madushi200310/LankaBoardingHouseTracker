@@ -110,11 +110,34 @@ class BoardingHouseController(
         return toDto(boardingHouseRepository.save(updated))
     }
 
-    // Public search: only approved listings, filtered by town
+    // Search approved listings in a town, with optional price range and sorting
+    // sort: "newest" (default), "price_asc", "price_desc"
     @GetMapping("/search")
-    fun search(@RequestParam townId: Long): List<BoardingHouseResponseDto> =
-        boardingHouseRepository.findByTownIdAndStatus(townId, BoardingHouseStatus.APPROVED)
-            .map { toDto(it) }
+    fun search(
+        @RequestParam townId: Long,
+        @RequestParam(required = false) minPrice: Double?,
+        @RequestParam(required = false) maxPrice: Double?,
+        @RequestParam(required = false, defaultValue = "newest") sort: String
+    ): List<BoardingHouseResponseDto> {
+        val min = minPrice ?: 0.0
+        val max = maxPrice ?: 1.0e12
+
+        if (min > max) {
+            throw IllegalArgumentException("minPrice cannot be greater than maxPrice")
+        }
+
+        val results = boardingHouseRepository.findByTownIdAndStatusAndPriceBetween(
+            townId, BoardingHouseStatus.APPROVED, min, max
+        )
+
+        val sorted = when (sort) {
+            "price_asc" -> results.sortedBy { it.price }
+            "price_desc" -> results.sortedByDescending { it.price }
+            else -> results.sortedByDescending { it.createdAt }
+        }
+
+        return sorted.map { toDto(it) }
+    }
 
     // Owner views their own submitted listings (any status)
     @GetMapping("/owner/{ownerId}")

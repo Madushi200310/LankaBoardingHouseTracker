@@ -11,6 +11,12 @@ import com.lk.lankaboardinghouse.android.data.model.TownDto
 import com.lk.lankaboardinghouse.android.data.remote.RetrofitClient
 import kotlinx.coroutines.launch
 
+enum class SortOption(val label: String, val apiValue: String) {
+    NEWEST("Newest first", "newest"),
+    PRICE_LOW_HIGH("Price: low to high", "price_asc"),
+    PRICE_HIGH_LOW("Price: high to low", "price_desc")
+}
+
 class UserViewModel : ViewModel() {
 
     var districts by mutableStateOf<List<DistrictDto>>(emptyList())
@@ -21,6 +27,12 @@ class UserViewModel : ViewModel() {
     var selectedDistrict by mutableStateOf<DistrictDto?>(null)
         private set
     var selectedTown by mutableStateOf<TownDto?>(null)
+        private set
+
+    // Filters (kept as text so the fields can be edited freely)
+    var minPrice by mutableStateOf("")
+    var maxPrice by mutableStateOf("")
+    var sortOption by mutableStateOf(SortOption.NEWEST)
         private set
 
     var searchResults by mutableStateOf<List<BoardingHouseResponseDto>>(emptyList())
@@ -55,6 +67,7 @@ class UserViewModel : ViewModel() {
         towns = emptyList()
         searchResults = emptyList()
         hasSearched = false
+        errorMessage = null
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.apiService.getTowns(district.id)
@@ -72,13 +85,43 @@ class UserViewModel : ViewModel() {
         search()
     }
 
-    private fun search() {
+    fun onSortSelected(option: SortOption) {
+        sortOption = option
+        search()
+    }
+
+    fun clearFilters() {
+        minPrice = ""
+        maxPrice = ""
+        sortOption = SortOption.NEWEST
+        search()
+    }
+
+    fun search() {
         val town = selectedTown ?: return
+
+        val min = minPrice.toDoubleOrNull()
+        val max = maxPrice.toDoubleOrNull()
+
+        if ((minPrice.isNotBlank() && min == null) || (maxPrice.isNotBlank() && max == null)) {
+            errorMessage = "Please enter valid prices (numbers only)"
+            return
+        }
+        if (min != null && max != null && min > max) {
+            errorMessage = "Minimum price cannot be higher than maximum price"
+            return
+        }
+
         isSearching = true
         errorMessage = null
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.apiService.searchBoardingHouses(town.id)
+                val response = RetrofitClient.apiService.searchBoardingHouses(
+                    townId = town.id,
+                    minPrice = min,
+                    maxPrice = max,
+                    sort = sortOption.apiValue
+                )
                 if (response.isSuccessful) {
                     searchResults = response.body() ?: emptyList()
                 } else {

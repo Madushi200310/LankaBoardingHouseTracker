@@ -42,8 +42,14 @@ interface ApiService {
     @GET("api/boarding-houses/owner/{ownerId}")
     suspend fun getOwnerListings(@Path("ownerId") ownerId: Long): Response<List<BoardingHouseResponseDto>>
 
+    // Null query parameters are left out of the request by Retrofit
     @GET("api/boarding-houses/search")
-    suspend fun searchBoardingHouses(@Query("townId") townId: Long): Response<List<BoardingHouseResponseDto>>
+    suspend fun searchBoardingHouses(
+        @Query("townId") townId: Long,
+        @Query("minPrice") minPrice: Double? = null,
+        @Query("maxPrice") maxPrice: Double? = null,
+        @Query("sort") sort: String? = null
+    ): Response<List<BoardingHouseResponseDto>>
 
     @GET("api/boarding-houses/pending")
     suspend fun getPendingBoardingHouses(): Response<List<BoardingHouseResponseDto>>

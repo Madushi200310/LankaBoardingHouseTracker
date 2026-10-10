@@ -9,5 +9,11 @@ import org.springframework.stereotype.Repository
 interface BoardingHouseRepository : JpaRepository<BoardingHouse, Long> {
     fun findByStatus(status: BoardingHouseStatus): List<BoardingHouse>
     fun findByTownIdAndStatus(townId: Long, status: BoardingHouseStatus): List<BoardingHouse>
+    fun findByTownIdAndStatusAndPriceBetween(
+        townId: Long,
+        status: BoardingHouseStatus,
+        minPrice: Double,
+        maxPrice: Double
+    ): List<BoardingHouse>
     fun findByOwnerId(ownerId: Long): List<BoardingHouse>
 }
