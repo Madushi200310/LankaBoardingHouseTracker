@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lk.lankaboardinghouse.android.data.model.AvailabilityRequest
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseRequestDto
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 import com.lk.lankaboardinghouse.android.data.model.DistrictDto
@@ -47,6 +48,12 @@ class OwnerViewModel : ViewModel() {
 
     // Non-null while the owner is editing a declined listing to resubmit it
     var editingListingId by mutableStateOf<Long?>(null)
+        private set
+
+    // Used by "mark as full" and "delete" on a listing card
+    var actionInProgressId by mutableStateOf<Long?>(null)
+        private set
+    var actionError by mutableStateOf<String?>(null)
         private set
 
     init {
@@ -194,6 +201,49 @@ class OwnerViewModel : ViewModel() {
                 // Silently fail for now
             } finally {
                 listingsLoading = false
+            }
+        }
+    }
+
+    // Mark an approved listing as full (hidden from search) or available again
+    fun toggleAvailability(listing: BoardingHouseResponseDto) {
+        actionInProgressId = listing.id
+        actionError = null
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.setAvailability(
+                    listing.id,
+                    AvailabilityRequest(!listing.available)
+                )
+                val updated = response.body()
+                if (response.isSuccessful && updated != null) {
+                    myListings = myListings.map { if (it.id == updated.id) updated else it }
+                } else {
+                    actionError = "Could not update the listing"
+                }
+            } catch (e: Exception) {
+                actionError = "Could not connect to server: ${e.message}"
+            } finally {
+                actionInProgressId = null
+            }
+        }
+    }
+
+    fun deleteListing(id: Long) {
+        actionInProgressId = id
+        actionError = null
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.deleteBoardingHouse(id)
+                if (response.isSuccessful) {
+                    myListings = myListings.filterNot { it.id == id }
+                } else {
+                    actionError = "Could not delete the listing"
+                }
+            } catch (e: Exception) {
+                actionError = "Could not connect to server: ${e.message}"
+            } finally {
+                actionInProgressId = null
             }
         }
     }

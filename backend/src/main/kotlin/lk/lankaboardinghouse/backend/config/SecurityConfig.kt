@@ -50,6 +50,8 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                 authorize(HttpMethod.POST, "/api/boarding-houses/request", hasRole("OWNER"))
                 authorize(HttpMethod.GET, "/api/boarding-houses/owner/*", hasRole("OWNER"))
                 authorize(HttpMethod.PUT, "/api/boarding-houses/*", hasRole("OWNER"))
+                authorize(HttpMethod.PUT, "/api/boarding-houses/*/availability", hasRole("OWNER"))
+                authorize(HttpMethod.DELETE, "/api/boarding-houses/*", hasRole("OWNER"))
 
                 // Admin only
                 authorize(HttpMethod.GET, "/api/boarding-houses/pending", hasRole("ADMIN"))

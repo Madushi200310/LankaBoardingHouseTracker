@@ -41,6 +41,10 @@ data class BoardingHouse(
     @Column(columnDefinition = "TEXT")
     val declineReason: String? = null,
 
+    // false = owner marked the place as full; it is hidden from search
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    val available: Boolean = true,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
 )

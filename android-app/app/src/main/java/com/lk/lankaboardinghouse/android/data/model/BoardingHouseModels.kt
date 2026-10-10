@@ -14,6 +14,10 @@ data class DeclineRequest(
     val reason: String
 )
 
+data class AvailabilityRequest(
+    val available: Boolean
+)
+
 data class BoardingHouseResponseDto(
     val id: Long,
     val title: String,
@@ -28,5 +32,6 @@ data class BoardingHouseResponseDto(
     val ownerName: String,
     val ownerPhone: String,
     val status: String,
-    val declineReason: String?
+    val declineReason: String?,
+    val available: Boolean
 )

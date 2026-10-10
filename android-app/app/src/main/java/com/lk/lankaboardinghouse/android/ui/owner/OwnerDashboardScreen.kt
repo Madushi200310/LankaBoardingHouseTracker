@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -103,27 +104,43 @@ private fun MyListingsTab(
     viewModel: OwnerViewModel,
     onEdit: (BoardingHouseResponseDto) -> Unit
 ) {
-    if (viewModel.listingsLoading) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center
-        ) {
-            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+    when {
+        viewModel.listingsLoading -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+            }
         }
-        return
-    }
+        viewModel.myListings.isEmpty() -> {
+            Text(
+                text = "You haven't submitted any boarding houses yet.",
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+        else -> {
+            Column(modifier = Modifier.fillMaxSize()) {
+                viewModel.actionError?.let { message ->
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                    )
+                }
 
-    if (viewModel.myListings.isEmpty()) {
-        Text(
-            text = "You haven't submitted any boarding houses yet.",
-            modifier = Modifier.padding(16.dp)
-        )
-        return
-    }
-
-    LazyColumn(contentPadding = PaddingValues(16.dp)) {
-        items(viewModel.myListings) { listing ->
-            ListingCard(listing, onEdit)
+                LazyColumn(contentPadding = PaddingValues(16.dp)) {
+                    items(viewModel.myListings) { listing ->
+                        ListingCard(
+                            listing = listing,
+                            isProcessing = viewModel.actionInProgressId == listing.id,
+                            onEdit = onEdit,
+                            onToggleAvailability = { viewModel.toggleAvailability(it) },
+                            onDelete = { viewModel.deleteListing(it) }
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -131,8 +148,36 @@ private fun MyListingsTab(
 @Composable
 private fun ListingCard(
     listing: BoardingHouseResponseDto,
-    onEdit: (BoardingHouseResponseDto) -> Unit
+    isProcessing: Boolean,
+    onEdit: (BoardingHouseResponseDto) -> Unit,
+    onToggleAvailability: (BoardingHouseResponseDto) -> Unit,
+    onDelete: (Long) -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete listing?") },
+            text = { Text("\"${listing.title}\" will be permanently removed. This cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDelete(listing.id)
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = listing.title, style = MaterialTheme.typography.titleMedium)
@@ -143,6 +188,18 @@ private fun ListingCard(
                 style = MaterialTheme.typography.labelLarge
             )
 
+            if (listing.status == "APPROVED") {
+                Text(
+                    text = if (listing.available) "Visible in search" else "Marked as FULL (hidden from search)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (listing.available) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    }
+                )
+            }
+
             if (listing.status == "DECLINED") {
                 Text(
                     text = "Reason: ${listing.declineReason ?: "No reason given"}",
@@ -150,11 +207,31 @@ private fun ListingCard(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
                 )
-                Button(
-                    onClick = { onEdit(listing) },
-                    modifier = Modifier.padding(top = 8.dp)
+            }
+
+            if (isProcessing) {
+                CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp))
+            } else {
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Edit & Resubmit")
+                    if (listing.status == "APPROVED") {
+                        OutlinedButton(onClick = { onToggleAvailability(listing) }) {
+                            Text(if (listing.available) "Mark as Full" else "Mark as Available")
+                        }
+                    }
+                    if (listing.status == "DECLINED") {
+                        Button(onClick = { onEdit(listing) }) {
+                            Text("Edit & Resubmit")
+                        }
+                    }
+                    TextButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.lk.lankaboardinghouse.android.data.remote
 
+import com.lk.lankaboardinghouse.android.data.model.AvailabilityRequest
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseRequestDto
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 import com.lk.lankaboardinghouse.android.data.model.DeclineRequest
@@ -10,6 +11,7 @@ import com.lk.lankaboardinghouse.android.data.model.TownDto
 import com.lk.lankaboardinghouse.android.data.model.UserResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -38,6 +40,15 @@ interface ApiService {
         @Path("id") id: Long,
         @Body request: BoardingHouseRequestDto
     ): Response<BoardingHouseResponseDto>
+
+    @PUT("api/boarding-houses/{id}/availability")
+    suspend fun setAvailability(
+        @Path("id") id: Long,
+        @Body request: AvailabilityRequest
+    ): Response<BoardingHouseResponseDto>
+
+    @DELETE("api/boarding-houses/{id}")
+    suspend fun deleteBoardingHouse(@Path("id") id: Long): Response<Unit>
 
     @GET("api/boarding-houses/owner/{ownerId}")
     suspend fun getOwnerListings(@Path("ownerId") ownerId: Long): Response<List<BoardingHouseResponseDto>>
