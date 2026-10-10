@@ -45,6 +45,10 @@ class OwnerViewModel : ViewModel() {
     var listingsLoading by mutableStateOf(false)
         private set
 
+    // Non-null while the owner is editing a declined listing to resubmit it
+    var editingListingId by mutableStateOf<Long?>(null)
+        private set
+
     init {
         loadDistricts()
     }
@@ -57,7 +61,7 @@ class OwnerViewModel : ViewModel() {
                     districts = response.body() ?: emptyList()
                 }
             } catch (_: Exception) {
-                // Silently fail for now; could add an error state if needed
+                // Silently fail for now
             }
         }
     }
@@ -82,6 +86,42 @@ class OwnerViewModel : ViewModel() {
         selectedTown = town
     }
 
+    // Fill the form with a declined listing so the owner can fix it and resubmit
+    fun startEdit(listing: BoardingHouseResponseDto) {
+        editingListingId = listing.id
+        title = listing.title
+        description = listing.description
+        rulesAndRegulations = listing.rulesAndRegulations
+        price = if (listing.price % 1.0 == 0.0) listing.price.toLong().toString() else listing.price.toString()
+        addressLine = listing.addressLine
+        submitState = SubmitState.Idle
+
+        val district = districts.find { it.id == listing.districtId }
+        selectedDistrict = district
+        selectedTown = null
+        towns = emptyList()
+
+        if (district != null) {
+            viewModelScope.launch {
+                try {
+                    val response = RetrofitClient.apiService.getTowns(district.id)
+                    if (response.isSuccessful) {
+                        towns = response.body() ?: emptyList()
+                        selectedTown = towns.find { it.id == listing.townId }
+                    }
+                } catch (_: Exception) {
+                    // Owner can pick the town manually
+                }
+            }
+        }
+    }
+
+    fun cancelEdit() {
+        editingListingId = null
+        clearForm()
+        submitState = SubmitState.Idle
+    }
+
     fun submitListing(ownerId: Long) {
         val priceValue = price.toDoubleOrNull()
         val town = selectedTown
@@ -94,6 +134,7 @@ class OwnerViewModel : ViewModel() {
         }
 
         submitState = SubmitState.Loading
+        val editingId = editingListingId
 
         viewModelScope.launch {
             try {
@@ -106,9 +147,15 @@ class OwnerViewModel : ViewModel() {
                     townId = town.id,
                     ownerId = ownerId
                 )
-                val response = RetrofitClient.apiService.submitBoardingHouseRequest(request)
+                val response = if (editingId != null) {
+                    RetrofitClient.apiService.resubmitBoardingHouse(editingId, request)
+                } else {
+                    RetrofitClient.apiService.submitBoardingHouseRequest(request)
+                }
+
                 if (response.isSuccessful) {
                     submitState = SubmitState.Success
+                    editingListingId = null
                     clearForm()
                     loadMyListings(ownerId)
                 } else {

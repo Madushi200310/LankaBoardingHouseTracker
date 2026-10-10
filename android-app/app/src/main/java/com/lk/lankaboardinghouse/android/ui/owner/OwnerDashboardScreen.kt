@@ -44,7 +44,8 @@ fun OwnerDashboardScreen(
     viewModel: OwnerViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("My Listings", "Add New")
+    val isEditing = viewModel.editingListingId != null
+    val tabs = listOf("My Listings", if (isEditing) "Edit Listing" else "Add New")
 
     LaunchedEffect(Unit) {
         viewModel.loadMyListings(ownerId)
@@ -78,14 +79,30 @@ fun OwnerDashboardScreen(
         }
 
         when (selectedTab) {
-            0 -> MyListingsTab(viewModel)
-            1 -> AddNewListingTab(ownerId, viewModel)
+            0 -> MyListingsTab(
+                viewModel = viewModel,
+                onEdit = { listing ->
+                    viewModel.startEdit(listing)
+                    selectedTab = 1
+                }
+            )
+            1 -> AddNewListingTab(
+                ownerId = ownerId,
+                viewModel = viewModel,
+                onCancelEdit = {
+                    viewModel.cancelEdit()
+                    selectedTab = 0
+                }
+            )
         }
     }
 }
 
 @Composable
-private fun MyListingsTab(viewModel: OwnerViewModel) {
+private fun MyListingsTab(
+    viewModel: OwnerViewModel,
+    onEdit: (BoardingHouseResponseDto) -> Unit
+) {
     if (viewModel.listingsLoading) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -106,13 +123,16 @@ private fun MyListingsTab(viewModel: OwnerViewModel) {
 
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         items(viewModel.myListings) { listing ->
-            ListingCard(listing)
+            ListingCard(listing, onEdit)
         }
     }
 }
 
 @Composable
-private fun ListingCard(listing: BoardingHouseResponseDto) {
+private fun ListingCard(
+    listing: BoardingHouseResponseDto,
+    onEdit: (BoardingHouseResponseDto) -> Unit
+) {
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = listing.title, style = MaterialTheme.typography.titleMedium)
@@ -122,17 +142,45 @@ private fun ListingCard(listing: BoardingHouseResponseDto) {
                 text = "Status: ${listing.status}",
                 style = MaterialTheme.typography.labelLarge
             )
+
+            if (listing.status == "DECLINED") {
+                Text(
+                    text = "Reason: ${listing.declineReason ?: "No reason given"}",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Button(
+                    onClick = { onEdit(listing) },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Edit & Resubmit")
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun AddNewListingTab(ownerId: Long, viewModel: OwnerViewModel) {
+private fun AddNewListingTab(
+    ownerId: Long,
+    viewModel: OwnerViewModel,
+    onCancelEdit: () -> Unit
+) {
     var districtExpanded by remember { mutableStateOf(false) }
     var townExpanded by remember { mutableStateOf(false) }
+    val isEditing = viewModel.editingListingId != null
 
     LazyColumn(contentPadding = PaddingValues(16.dp)) {
         item {
+            if (isEditing) {
+                Text(
+                    text = "Fix the issues the admin raised, then resubmit for approval.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
             OutlinedTextField(
                 value = viewModel.title,
                 onValueChange = { viewModel.title = it },
@@ -222,7 +270,7 @@ private fun AddNewListingTab(ownerId: Long, viewModel: OwnerViewModel) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 is SubmitState.Success -> Text(
-                    text = "Listing submitted! Waiting for admin approval.",
+                    text = "Submitted! Waiting for admin approval.",
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -233,7 +281,16 @@ private fun AddNewListingTab(ownerId: Long, viewModel: OwnerViewModel) {
                 onClick = { viewModel.submitListing(ownerId) },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
-                Text("Submit for Approval")
+                Text(if (isEditing) "Resubmit for Approval" else "Submit for Approval")
+            }
+
+            if (isEditing) {
+                TextButton(
+                    onClick = onCancelEdit,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel")
+                }
             }
         }
     }

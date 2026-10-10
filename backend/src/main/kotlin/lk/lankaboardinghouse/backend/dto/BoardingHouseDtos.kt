@@ -12,6 +12,10 @@ data class BoardingHouseRequestDto(
     val ownerId: Long
 )
 
+data class DeclineRequestDto(
+    val reason: String
+)
+
 data class BoardingHouseResponseDto(
     val id: Long,
     val title: String,
@@ -19,9 +23,12 @@ data class BoardingHouseResponseDto(
     val rulesAndRegulations: String,
     val price: Double,
     val addressLine: String,
+    val townId: Long,
     val townName: String,
+    val districtId: Long,
     val districtName: String,
     val ownerName: String,
     val ownerPhone: String,
-    val status: BoardingHouseStatus
+    val status: BoardingHouseStatus,
+    val declineReason: String?
 )

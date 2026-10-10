@@ -38,6 +38,9 @@ data class BoardingHouse(
     @Column(nullable = false)
     val status: BoardingHouseStatus = BoardingHouseStatus.PENDING,
 
+    @Column(columnDefinition = "TEXT")
+    val declineReason: String? = null,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
 )

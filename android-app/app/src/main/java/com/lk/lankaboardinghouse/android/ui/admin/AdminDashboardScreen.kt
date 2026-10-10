@@ -9,15 +9,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -88,7 +94,7 @@ fun AdminDashboardScreen(
                             listing = listing,
                             isProcessing = viewModel.actionInProgressId == listing.id,
                             onApprove = { viewModel.approve(listing.id) },
-                            onDecline = { viewModel.decline(listing.id) }
+                            onDecline = { reason -> viewModel.decline(listing.id, reason) }
                         )
                     }
                 }
@@ -102,8 +108,43 @@ private fun PendingListingCard(
     listing: BoardingHouseResponseDto,
     isProcessing: Boolean,
     onApprove: () -> Unit,
-    onDecline: () -> Unit
+    onDecline: (String) -> Unit
 ) {
+    var showDeclineDialog by remember { mutableStateOf(false) }
+    var reason by remember { mutableStateOf("") }
+
+    if (showDeclineDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeclineDialog = false },
+            title = { Text("Decline listing") },
+            text = {
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    label = { Text("Reason (the owner will see this)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = reason.isNotBlank(),
+                    onClick = {
+                        onDecline(reason.trim())
+                        showDeclineDialog = false
+                        reason = ""
+                    }
+                ) {
+                    Text("Decline")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeclineDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = listing.title, style = MaterialTheme.typography.titleMedium)
@@ -139,7 +180,7 @@ private fun PendingListingCard(
                         Text("Approve")
                     }
                     OutlinedButton(
-                        onClick = onDecline,
+                        onClick = { showDeclineDialog = true },
                         modifier = Modifier.weight(1f).padding(start = 8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.error

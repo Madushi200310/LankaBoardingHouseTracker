@@ -32,7 +32,6 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
             csrf { disable() }
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             exceptionHandling {
-                // Not logged in (missing/invalid token): 401
                 authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
                 accessDeniedHandler = forbiddenHandler
             }
@@ -50,6 +49,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                 // Owner only
                 authorize(HttpMethod.POST, "/api/boarding-houses/request", hasRole("OWNER"))
                 authorize(HttpMethod.GET, "/api/boarding-houses/owner/*", hasRole("OWNER"))
+                authorize(HttpMethod.PUT, "/api/boarding-houses/*", hasRole("OWNER"))
 
                 // Admin only
                 authorize(HttpMethod.GET, "/api/boarding-houses/pending", hasRole("ADMIN"))

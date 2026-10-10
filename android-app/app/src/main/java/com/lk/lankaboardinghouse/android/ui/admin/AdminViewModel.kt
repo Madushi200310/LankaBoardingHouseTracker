@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
+import com.lk.lankaboardinghouse.android.data.model.DeclineRequest
 import com.lk.lankaboardinghouse.android.data.remote.RetrofitClient
 import kotlinx.coroutines.launch
 
@@ -61,11 +62,11 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    fun decline(id: Long) {
+    fun decline(id: Long, reason: String) {
         actionInProgressId = id
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.apiService.declineBoardingHouse(id)
+                val response = RetrofitClient.apiService.declineBoardingHouse(id, DeclineRequest(reason))
                 if (response.isSuccessful) {
                     pendingListings = pendingListings.filterNot { it.id == id }
                 } else {
