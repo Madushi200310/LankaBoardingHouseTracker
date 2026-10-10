@@ -1,0 +1,15 @@
+# Copy this file to application-local.properties (same folder) and fill in your values.
+# application-local.properties is git-ignored, so your real password and secret stay private.
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/lanka_boarding_house_db
+spring.datasource.username=postgres
+spring.datasource.password=Hansamalika1?
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+# JWT: the secret must be at least 32 characters. Use your own random value.
+jwt.secret=REPLACE_WITH_A_LONG_RANDOM_STRING_OF_32_CHARS_OR_MORE
+# Token lifetime in milliseconds (86400000 = 24 hours)
+jwt.expiration-ms=86400000
