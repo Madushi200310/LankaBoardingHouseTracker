@@ -17,8 +17,19 @@ import com.lk.lankaboardinghouse.android.ui.owner.OwnerDashboardScreen
 import com.lk.lankaboardinghouse.android.ui.register.RegisterScreen
 import com.lk.lankaboardinghouse.android.ui.user.UserDashboardScreen
 
+// Where the app should open: the user's dashboard if a session was restored, else Login
+fun startDestinationFor(user: UserResponse?): String = when (user?.role) {
+    "ADMIN" -> Screen.AdminDashboard.route
+    "OWNER" -> Screen.OwnerDashboard.route
+    "USER" -> Screen.UserDashboard.route
+    else -> Screen.Login.route
+}
+
 @Composable
-fun AppNavGraph(modifier: Modifier = Modifier) {
+fun AppNavGraph(
+    startDestination: String,
+    modifier: Modifier = Modifier
+) {
     val navController: NavHostController = rememberNavController()
     val context = LocalContext.current
 
@@ -33,13 +44,13 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Login.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { user ->
-                    SessionManager.currentUser = user
+                    SessionManager.saveSession(user)
                     navigateToDashboard(navController, user)
                 },
                 onNavigateToRegister = {
@@ -51,7 +62,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         composable(Screen.Register.route) {
             RegisterScreen(
                 onRegisterSuccess = { user ->
-                    SessionManager.currentUser = user
+                    SessionManager.saveSession(user)
                     navigateToDashboard(navController, user)
                 },
                 onBackToLogin = {
@@ -86,14 +97,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
 }
 
 private fun navigateToDashboard(navController: NavHostController, user: UserResponse) {
-    val destination = when (user.role) {
-        "ADMIN" -> Screen.AdminDashboard.route
-        "OWNER" -> Screen.OwnerDashboard.route
-        "USER" -> Screen.UserDashboard.route
-        else -> Screen.Login.route
-    }
-
-    navController.navigate(destination) {
+    navController.navigate(startDestinationFor(user)) {
         popUpTo(Screen.Login.route) { inclusive = true }
     }
 }
