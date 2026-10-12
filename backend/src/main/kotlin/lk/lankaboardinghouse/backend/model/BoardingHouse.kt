@@ -45,6 +45,15 @@ data class BoardingHouse(
     @Column(nullable = false, columnDefinition = "boolean default true")
     val available: Boolean = true,
 
+    // NEW: relative URLs of uploaded photos, e.g. /uploads/abc.jpg
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "boarding_house_photos",
+        joinColumns = [JoinColumn(name = "boarding_house_id")]
+    )
+    @Column(name = "photo_url", nullable = false)
+    val photoUrls: MutableList<String> = mutableListOf(),
+
     @Column(nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
 )
