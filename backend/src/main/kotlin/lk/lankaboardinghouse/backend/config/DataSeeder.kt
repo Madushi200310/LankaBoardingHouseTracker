@@ -7,6 +7,8 @@ import lk.lankaboardinghouse.backend.model.User
 import lk.lankaboardinghouse.backend.repository.DistrictRepository
 import lk.lankaboardinghouse.backend.repository.TownRepository
 import lk.lankaboardinghouse.backend.repository.UserRepository
+import lk.lankaboardinghouse.backend.security.PasswordPolicy
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
@@ -16,7 +18,9 @@ class DataSeeder(
     private val districtRepository: DistrictRepository,
     private val townRepository: TownRepository,
     private val userRepository: UserRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    @Value("\${admin.email:}") private val adminEmail: String,
+    @Value("\${admin.password:}") private val adminPassword: String
 ) : CommandLineRunner {
 
     override fun run(vararg args: String) {
@@ -69,20 +73,29 @@ class DataSeeder(
     }
 
     private fun seedAdminUser() {
-        if (userRepository.findByEmail("admin@lankaboarding.lk") != null) {
+        // No default credentials — the admin is only created if explicitly
+        // configured via env vars (prod) or application-local.properties (dev).
+        if (adminEmail.isBlank() || adminPassword.isBlank()) {
+            println("Admin credentials not configured (admin.email / admin.password); skipping admin seed.")
+            return
+        }
+
+        if (userRepository.findByEmail(adminEmail) != null) {
             println("Admin user already exists, skipping.")
             return
         }
 
+        PasswordPolicy.validate(adminPassword)
+
         val admin = User(
             fullName = "System Admin",
-            email = "admin@lankaboarding.lk",
-            password = passwordEncoder.encode("Admin@123") ?: error("Password encoding failed"),
+            email = adminEmail,
+            password = passwordEncoder.encode(adminPassword) ?: error("Password encoding failed"),
             phoneNumber = "0770000000",
             role = Role.ADMIN
         )
 
         userRepository.save(admin)
-        println("Seeded default admin user (email: admin@lankaboarding.lk, password: Admin@123)")
+        println("Seeded admin user: $adminEmail")
     }
 }

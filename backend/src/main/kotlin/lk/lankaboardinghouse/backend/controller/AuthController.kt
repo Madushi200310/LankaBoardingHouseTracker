@@ -7,6 +7,7 @@ import lk.lankaboardinghouse.backend.model.Role
 import lk.lankaboardinghouse.backend.model.User
 import lk.lankaboardinghouse.backend.repository.UserRepository
 import lk.lankaboardinghouse.backend.security.JwtService
+import lk.lankaboardinghouse.backend.security.PasswordPolicy
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
 
@@ -38,6 +39,9 @@ class AuthController(
             throw IllegalArgumentException("Cannot register as admin")
         }
 
+        // Same rule as change-password and admin seed
+        PasswordPolicy.validate(dto.password)
+
         val user = User(
             fullName = dto.fullName,
             email = dto.email,
@@ -56,6 +60,12 @@ class AuthController(
 
         if (!passwordEncoder.matches(dto.password, user.password)) {
             throw IllegalArgumentException("Invalid email or password")
+        }
+
+        // Checked here AND in JwtAuthFilter — this catches users who were
+        // disabled before they ever logged in (no token to invalidate).
+        if (user.disabled) {
+            throw IllegalArgumentException("Account is disabled. Contact the administrator.")
         }
 
         return toDto(user)

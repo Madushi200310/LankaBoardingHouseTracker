@@ -14,6 +14,12 @@ class JwtService(
     @Value("\${jwt.expiration-ms}") private val expirationMs: Long
 ) {
 
+    init {
+        require(secret.toByteArray().size >= 32) {
+            "jwt.secret must be at least 32 bytes for HS256"
+        }
+    }
+
     private val key = Keys.hmacShaKeyFor(secret.toByteArray())
 
     fun generateToken(user: User): String {
@@ -22,6 +28,9 @@ class JwtService(
             .subject(user.id.toString())
             .claim("role", user.role.name)
             .claim("email", user.email)
+            // Token version: bumped on password change or account disable.
+            // JwtAuthFilter rejects any token whose "tv" doesn't match the user's.
+            .claim("tv", user.tokenVersion)
             .issuedAt(Date(now))
             .expiration(Date(now + expirationMs))
             .signWith(key)
