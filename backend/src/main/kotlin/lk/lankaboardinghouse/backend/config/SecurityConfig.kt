@@ -59,6 +59,9 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
                 authorize(HttpMethod.PUT, "/api/boarding-houses/*/decline", hasRole("ADMIN"))
                 authorize(HttpMethod.GET, "/api/boarding-houses", hasRole("ADMIN"))
 
+                // Admin user management
+                authorize("/api/admin/users/**", hasRole("ADMIN"))
+
                 authorize(anyRequest, authenticated)
             }
             addFilterBefore<UsernamePasswordAuthenticationFilter>(jwtAuthFilter)
