@@ -21,13 +21,10 @@ android {
 
     buildTypes {
         debug {
-            // Emulator alias for PC's localhost
             buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
         }
         release {
-            // Placeholder — replace with your deployed backend URL when ready
             buildConfigField("String", "BASE_URL", "\"https://api.lankaboardinghouse.com/\"")
-
             optimization {
                 enable = false
             }
@@ -39,7 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true // <-- Required for buildConfigField
+        buildConfig = true
     }
 }
 
@@ -59,7 +56,11 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging.interceptor)
+
+    // Test dependencies
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2") // Added for Coroutines
+
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
