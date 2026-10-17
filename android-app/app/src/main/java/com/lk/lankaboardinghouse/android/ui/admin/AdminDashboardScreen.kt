@@ -14,11 +14,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lk.lankaboardinghouse.android.data.model.AdminUserDto
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     fullName: String,
@@ -69,7 +71,7 @@ fun AdminDashboardScreen(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        TabRow(
+        PrimaryTabRow(
             selectedTabIndex = selectedTab,
             modifier = Modifier.padding(top = 8.dp)
         ) {

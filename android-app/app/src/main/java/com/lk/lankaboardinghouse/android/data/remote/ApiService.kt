@@ -86,4 +86,15 @@ interface ApiService {
         @Path("id") id: Long,
         @Body request: SetDisabledRequest
     ): Response<AdminUserDto>
+
+    // ─── Favourites ──────────────────────────────────────────────────────
+
+    @GET("api/favourites")
+    suspend fun getFavourites(): Response<List<BoardingHouseResponseDto>>
+
+    @POST("api/favourites/{boardingHouseId}")
+    suspend fun addFavourite(@Path("boardingHouseId") boardingHouseId: Long): Response<Unit>
+
+    @DELETE("api/favourites/{boardingHouseId}")
+    suspend fun removeFavourite(@Path("boardingHouseId") boardingHouseId: Long): Response<Unit>
 }

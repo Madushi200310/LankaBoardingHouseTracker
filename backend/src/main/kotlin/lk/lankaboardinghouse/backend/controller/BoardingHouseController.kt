@@ -1,12 +1,14 @@
 package lk.lankaboardinghouse.backend.controller
 
 import lk.lankaboardinghouse.backend.dto.AvailabilityRequestDto
+import lk.lankaboardinghouse.backend.dto.BoardingHouseMapper
 import lk.lankaboardinghouse.backend.dto.BoardingHouseRequestDto
 import lk.lankaboardinghouse.backend.dto.BoardingHouseResponseDto
 import lk.lankaboardinghouse.backend.dto.DeclineRequestDto
 import lk.lankaboardinghouse.backend.model.BoardingHouse
 import lk.lankaboardinghouse.backend.model.BoardingHouseStatus
 import lk.lankaboardinghouse.backend.repository.BoardingHouseRepository
+import lk.lankaboardinghouse.backend.repository.FavouriteRepository
 import lk.lankaboardinghouse.backend.repository.TownRepository
 import lk.lankaboardinghouse.backend.repository.UserRepository
 import org.springframework.http.ResponseEntity
@@ -19,26 +21,9 @@ import org.springframework.web.bind.annotation.*
 class BoardingHouseController(
     private val boardingHouseRepository: BoardingHouseRepository,
     private val townRepository: TownRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val favouriteRepository: FavouriteRepository
 ) {
-
-    private fun toDto(b: BoardingHouse) = BoardingHouseResponseDto(
-        id = b.id,
-        title = b.title,
-        description = b.description,
-        rulesAndRegulations = b.rulesAndRegulations,
-        price = b.price,
-        addressLine = b.addressLine,
-        townId = b.town.id,
-        townName = b.town.name,
-        districtId = b.town.district.id,
-        districtName = b.town.district.name,
-        ownerName = b.owner.fullName,
-        ownerPhone = b.owner.phoneNumber,
-        status = b.status,
-        declineReason = b.declineReason,
-        available = b.available
-    )
 
     // The token's subject is the user id; make sure it matches the id in the request
     private fun requireSelf(authentication: Authentication, ownerId: Long) {
@@ -60,7 +45,7 @@ class BoardingHouseController(
     // Admin/debug: view ALL boarding houses regardless of status
     @GetMapping
     fun getAll(): List<BoardingHouseResponseDto> =
-        boardingHouseRepository.findAll().map { toDto(it) }
+        boardingHouseRepository.findAll().map { BoardingHouseMapper.toDto(it) }
 
     // Owner submits a new listing request (status = PENDING)
     @PostMapping("/request")
@@ -86,7 +71,7 @@ class BoardingHouseController(
             status = BoardingHouseStatus.PENDING
         )
 
-        return toDto(boardingHouseRepository.save(boardingHouse))
+        return BoardingHouseMapper.toDto(boardingHouseRepository.save(boardingHouse))
     }
 
     // Owner edits a DECLINED listing and resubmits it (status goes back to PENDING)
@@ -116,7 +101,7 @@ class BoardingHouseController(
             declineReason = null
         )
 
-        return toDto(boardingHouseRepository.save(updated))
+        return BoardingHouseMapper.toDto(boardingHouseRepository.save(updated))
     }
 
     // Owner marks an approved listing as full (hidden from search) or available again
@@ -132,16 +117,21 @@ class BoardingHouseController(
             throw IllegalArgumentException("Only approved listings can be marked as full or available")
         }
 
-        return toDto(boardingHouseRepository.save(existing.copy(available = dto.available)))
+        return BoardingHouseMapper.toDto(
+            boardingHouseRepository.save(existing.copy(available = dto.available))
+        )
     }
 
-    // Owner permanently deletes one of their own listings
+    // Owner permanently deletes one of their own listings.
+    // Favourites that reference it are removed first, so the DB never sees
+    // a foreign-key violation.
     @DeleteMapping("/{id}")
     fun delete(
         @PathVariable id: Long,
         authentication: Authentication
     ): ResponseEntity<Void> {
         val existing = findOwnedListing(id, authentication)
+        favouriteRepository.deleteByBoardingHouseId(id)
         boardingHouseRepository.delete(existing)
         return ResponseEntity.noContent().build()
     }
@@ -172,7 +162,7 @@ class BoardingHouseController(
             else -> results.sortedByDescending { it.createdAt }
         }
 
-        return sorted.map { toDto(it) }
+        return sorted.map { BoardingHouseMapper.toDto(it) }
     }
 
     // Owner views their own submitted listings (any status)
@@ -182,13 +172,13 @@ class BoardingHouseController(
         authentication: Authentication
     ): List<BoardingHouseResponseDto> {
         requireSelf(authentication, ownerId)
-        return boardingHouseRepository.findByOwnerId(ownerId).map { toDto(it) }
+        return boardingHouseRepository.findByOwnerId(ownerId).map { BoardingHouseMapper.toDto(it) }
     }
 
     // Admin: view all pending requests
     @GetMapping("/pending")
     fun getPending(): List<BoardingHouseResponseDto> =
-        boardingHouseRepository.findByStatus(BoardingHouseStatus.PENDING).map { toDto(it) }
+        boardingHouseRepository.findByStatus(BoardingHouseStatus.PENDING).map { BoardingHouseMapper.toDto(it) }
 
     // Admin: approve a request
     @PutMapping("/{id}/approve")
@@ -196,7 +186,7 @@ class BoardingHouseController(
         val b = boardingHouseRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Boarding house not found") }
         val updated = b.copy(status = BoardingHouseStatus.APPROVED, declineReason = null)
-        return toDto(boardingHouseRepository.save(updated))
+        return BoardingHouseMapper.toDto(boardingHouseRepository.save(updated))
     }
 
     // Admin: decline a request, with a reason the owner will see
@@ -211,6 +201,6 @@ class BoardingHouseController(
         val b = boardingHouseRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Boarding house not found") }
         val updated = b.copy(status = BoardingHouseStatus.DECLINED, declineReason = dto.reason.trim())
-        return toDto(boardingHouseRepository.save(updated))
+        return BoardingHouseMapper.toDto(boardingHouseRepository.save(updated))
     }
 }

@@ -19,6 +19,8 @@ enum class SortOption(val label: String, val apiValue: String) {
 
 class UserViewModel : ViewModel() {
 
+    // ─── Search state ────────────────────────────────────────────────────
+
     var districts by mutableStateOf<List<DistrictDto>>(emptyList())
         private set
     var towns by mutableStateOf<List<TownDto>>(emptyList())
@@ -29,7 +31,6 @@ class UserViewModel : ViewModel() {
     var selectedTown by mutableStateOf<TownDto?>(null)
         private set
 
-    // Filters (kept as text so the fields can be edited freely)
     var minPrice by mutableStateOf("")
     var maxPrice by mutableStateOf("")
     var sortOption by mutableStateOf(SortOption.NEWEST)
@@ -44,9 +45,27 @@ class UserViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
+    // ─── Favourites state ────────────────────────────────────────────────
+
+    var favourites by mutableStateOf<List<BoardingHouseResponseDto>>(emptyList())
+        private set
+    // Derived from `favourites`, but kept separately so the search card can
+    // check membership in O(1) without scanning a list.
+    var favouriteIds by mutableStateOf<Set<Long>>(emptySet())
+        private set
+    var favouritesLoading by mutableStateOf(false)
+        private set
+    var favouriteActionId by mutableStateOf<Long?>(null)
+        private set
+    var favouritesError by mutableStateOf<String?>(null)
+        private set
+
     init {
         loadDistricts()
+        loadFavourites()
     }
+
+    // ─── Search ──────────────────────────────────────────────────────────
 
     private fun loadDistricts() {
         viewModelScope.launch {
@@ -132,6 +151,69 @@ class UserViewModel : ViewModel() {
             } finally {
                 isSearching = false
                 hasSearched = true
+            }
+        }
+    }
+
+    // ─── Favourites ──────────────────────────────────────────────────────
+
+    fun loadFavourites() {
+        favouritesLoading = true
+        favouritesError = null
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.apiService.getFavourites()
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    favourites = list
+                    favouriteIds = list.map { it.id }.toSet()
+                } else {
+                    favouritesError = "Failed to load favourites"
+                }
+            } catch (e: Exception) {
+                favouritesError = "Could not connect to server: ${e.message}"
+            } finally {
+                favouritesLoading = false
+            }
+        }
+    }
+
+    /**
+     * Adds or removes [listing] from the current user's favourites.
+     * The local state is updated only after the server confirms, so the
+     * heart never shows a wrong state.
+     */
+    fun toggleFavourite(listing: BoardingHouseResponseDto) {
+        if (favouriteActionId != null) return // one at a time
+
+        val wasFavourite = listing.id in favouriteIds
+        favouriteActionId = listing.id
+        favouritesError = null
+
+        viewModelScope.launch {
+            try {
+                val response = if (wasFavourite) {
+                    RetrofitClient.apiService.removeFavourite(listing.id)
+                } else {
+                    RetrofitClient.apiService.addFavourite(listing.id)
+                }
+
+                if (response.isSuccessful) {
+                    if (wasFavourite) {
+                        favouriteIds = favouriteIds - listing.id
+                        favourites = favourites.filterNot { it.id == listing.id }
+                    } else {
+                        favouriteIds = favouriteIds + listing.id
+                        // Newest first, matching the backend order
+                        favourites = listOf(listing) + favourites
+                    }
+                } else {
+                    favouritesError = "Could not update favourites"
+                }
+            } catch (e: Exception) {
+                favouritesError = "Could not connect to server: ${e.message}"
+            } finally {
+                favouriteActionId = null
             }
         }
     }
