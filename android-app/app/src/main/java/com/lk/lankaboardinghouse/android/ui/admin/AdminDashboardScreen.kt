@@ -14,29 +14,40 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lk.lankaboardinghouse.android.data.model.AdminUserDto
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDashboardScreen(
     fullName: String,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AdminViewModel = viewModel()
+    listingsViewModel: AdminViewModel = viewModel(),
+    usersViewModel: AdminUsersViewModel = viewModel()
 ) {
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val tabs = listOf("Pending Listings", "Users")
+
     Column(modifier = modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -53,11 +64,36 @@ fun AdminDashboardScreen(
                 Text("Logout")
             }
         }
+
         Text(
             text = "Welcome, $fullName",
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
+
+        PrimaryTabRow(
+            selectedTabIndex = selectedTab,
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+
+        when (selectedTab) {
+            0 -> PendingListingsTab(listingsViewModel)
+            1 -> UsersTab(usersViewModel)
+        }
+    }
+}
+
+@Composable
+private fun PendingListingsTab(viewModel: AdminViewModel) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = "Pending Boarding House Requests",
             style = MaterialTheme.typography.titleMedium,
@@ -96,6 +132,121 @@ fun AdminDashboardScreen(
                             onApprove = { viewModel.approve(listing.id) },
                             onDecline = { reason -> viewModel.decline(listing.id, reason) }
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UsersTab(viewModel: AdminUsersViewModel) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = "All Users",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        viewModel.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+
+        when {
+            viewModel.isLoading -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            viewModel.users.isEmpty() -> {
+                Text(
+                    text = "No users found.",
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            else -> {
+                LazyColumn(contentPadding = PaddingValues(16.dp)) {
+                    items(viewModel.users, key = { it.id }) { user ->
+                        UserCard(
+                            user = user,
+                            isProcessing = viewModel.actionInProgressId == user.id,
+                            onToggleDisabled = { disabled ->
+                                viewModel.setDisabled(user, disabled)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserCard(
+    user: AdminUserDto,
+    isProcessing: Boolean,
+    onToggleDisabled: (Boolean) -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = user.fullName,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = user.role,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Text(text = user.email, style = MaterialTheme.typography.bodyMedium)
+            Text(text = user.phoneNumber, style = MaterialTheme.typography.bodyMedium)
+
+            Text(
+                text = if (user.disabled) "Status: DISABLED" else "Status: Active",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (user.disabled) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            // Admin rows never show the toggle (backend also refuses to disable admins).
+            if (user.role != "ADMIN") {
+                if (isProcessing) {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
+                } else {
+                    Row(modifier = Modifier.padding(top = 12.dp)) {
+                        if (user.disabled) {
+                            Button(onClick = { onToggleDisabled(false) }) {
+                                Text("Enable Account")
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { onToggleDisabled(true) },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) {
+                                Text("Disable Account")
+                            }
+                        }
                     }
                 }
             }

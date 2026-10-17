@@ -1,5 +1,6 @@
 package com.lk.lankaboardinghouse.android.data.remote
 
+import com.lk.lankaboardinghouse.android.data.model.AdminUserDto
 import com.lk.lankaboardinghouse.android.data.model.AvailabilityRequest
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseRequestDto
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
@@ -7,6 +8,7 @@ import com.lk.lankaboardinghouse.android.data.model.DeclineRequest
 import com.lk.lankaboardinghouse.android.data.model.DistrictDto
 import com.lk.lankaboardinghouse.android.data.model.LoginRequest
 import com.lk.lankaboardinghouse.android.data.model.RegisterRequest
+import com.lk.lankaboardinghouse.android.data.model.SetDisabledRequest
 import com.lk.lankaboardinghouse.android.data.model.TownDto
 import com.lk.lankaboardinghouse.android.data.model.UserResponse
 import retrofit2.Response
@@ -73,4 +75,26 @@ interface ApiService {
         @Path("id") id: Long,
         @Body request: DeclineRequest
     ): Response<BoardingHouseResponseDto>
+
+    // ─── Admin user management ───────────────────────────────────────────
+
+    @GET("api/admin/users")
+    suspend fun listUsers(): Response<List<AdminUserDto>>
+
+    @PUT("api/admin/users/{id}/disabled")
+    suspend fun setUserDisabled(
+        @Path("id") id: Long,
+        @Body request: SetDisabledRequest
+    ): Response<AdminUserDto>
+
+    // ─── Favourites ──────────────────────────────────────────────────────
+
+    @GET("api/favourites")
+    suspend fun getFavourites(): Response<List<BoardingHouseResponseDto>>
+
+    @POST("api/favourites/{boardingHouseId}")
+    suspend fun addFavourite(@Path("boardingHouseId") boardingHouseId: Long): Response<Unit>
+
+    @DELETE("api/favourites/{boardingHouseId}")
+    suspend fun removeFavourite(@Path("boardingHouseId") boardingHouseId: Long): Response<Unit>
 }

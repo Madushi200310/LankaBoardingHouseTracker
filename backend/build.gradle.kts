@@ -31,6 +31,12 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-gson:0.12.6")
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.postgresql:postgresql")
+
+	// Test dependencies
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") // Added for MockMvc, AssertJ
+	testImplementation("org.springframework.security:spring-security-test") // Added for role testing
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
