@@ -1,5 +1,6 @@
 package com.lk.lankaboardinghouse.android.data.remote
 
+import com.lk.lankaboardinghouse.android.BuildConfig
 import com.lk.lankaboardinghouse.android.data.session.SessionManager
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -9,8 +10,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // 10.0.2.2 = special alias the Android Emulator uses to reach your PC's localhost
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    // Configured in app/build.gradle.kts per build type
+    private val BASE_URL = BuildConfig.BASE_URL
 
     private val authInterceptor = Interceptor { chain ->
         val original = chain.request()
@@ -36,7 +37,12 @@ object RetrofitClient {
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        // Only log full body in debug builds to avoid leaking sensitive data in production logs
+        level = if (BuildConfig.DEBUG) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     private val okHttpClient = OkHttpClient.Builder()

@@ -20,7 +20,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Emulator alias for PC's localhost
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
+        }
         release {
+            // Placeholder — replace with your deployed backend URL when ready
+            buildConfigField("String", "BASE_URL", "\"https://api.lankaboardinghouse.com/\"")
+
             optimization {
                 enable = false
             }
@@ -32,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // <-- Required for buildConfigField
     }
 }
 
@@ -39,7 +47,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons.core)   // ← NEW
+    implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -49,7 +57,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.retrofit)
-    implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging.interceptor)
     testImplementation(libs.junit)
