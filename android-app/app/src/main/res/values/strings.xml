@@ -1,3 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LankaBoardingHouseTracker</string>
+    <string name="app_name">Lanka Boarding House Tracker</string>
+
+    <!-- General -->
+    <string name="logout">Logout</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="apply">Apply</string>
+    <string name="clear">Clear</string>
+    <string name="back">Back</string>
+    <string name="welcome_user">Welcome, %1$s</string>
+    <string name="change_password_footer">Change password</string>
+    <string name="session_expired">Session expired. Please log in again.</string>
+
+    <!-- Auth & Login -->
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+    <string name="create_account">Create an Account</string>
+    <string name="full_name">Full Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="i_am_a">I am a:</string>
+    <string name="role_user">Searching for a Boarding House</string>
+    <string name="role_owner">Boarding House Owner</string>
+    <string name="register">Register</string>
+    <string name="already_have_account">Already have an account? Login</string>
+
+    <!-- Change Password -->
+    <string name="change_password">Change Password</string>
+    <string name="current_password">Current password</string>
+    <string name="new_password_hint">New password (min 6 characters)</string>
+    <string name="confirm_new_password">Confirm new password</string>
+    <string name="password_changed_success">Password changed successfully.</string>
+
+    <!-- User Dashboard -->
+    <string name="find_boarding_house">Find a Boarding House</string>
+    <string name="search">Search</string>
+    <string name="favourites">Favourites</string>
+    <string name="select_district">Select District</string>
+    <string name="select_town">Select Town</string>
+    <string name="min_rs">Min Rs.</string>
+    <string name="max_rs">Max Rs.</string>
+    <string name="sort_newest">Newest first</string>
+    <string name="sort_price_asc">Price: low to high</string>
+    <string name="sort_price_desc">Price: high to low</string>
+    <string name="no_results">No boarding houses match your search.</string>
+    <string name="select_to_search">Select a district and town to search for boarding houses.</string>
+    <string name="results_found">%1$d boarding house(s) found</string>
+    <string name="your_favourites">Your Favourites</string>
+    <string name="no_favourites">You haven\'t saved any boarding houses yet. Tap the heart on a listing to save it.</string>
+    <string name="call">Call</string>
+    <string name="whatsapp">WhatsApp</string>
+    <string name="price_format">Rs. %1$d / month</string>
+    <string name="rules_format">Rules: %1$s</string>
+
+    <!-- Admin Dashboard -->
+    <string name="admin_dashboard">Admin Dashboard</string>
+    <string name="pending_listings">Pending Listings</string>
+    <string name="users">Users</string>
+    <string name="pending_requests">Pending Boarding House Requests</string>
+    <string name="no_pending">No pending requests right now.</string>
+    <string name="approve">Approve</string>
+    <string name="decline">Decline</string>
+    <string name="decline_listing">Decline listing</string>
+    <string name="decline_reason_hint">Reason (the owner will see this)</string>
+    <string name="all_users">All Users</string>
+    <string name="no_users">No users found.</string>
+    <string name="status_active">Status: Active</string>
+    <string name="status_disabled">Status: DISABLED</string>
+    <string name="enable_account">Enable Account</string>
+    <string name="disable_account">Disable Account</string>
+
+    <!-- Owner Dashboard -->
+    <string name="my_listings">My Listings</string>
+    <string name="edit_listing">Edit Listing</string>
+    <string name="add_new">Add New</string>
+    <string name="no_listings">You haven\'t submitted any boarding houses yet.</string>
+    <string name="fix_issues_hint">Fix the issues the admin raised, then resubmit for approval.</string>
+    <string name="title">Title</string>
+    <string name="description">Description</string>
+    <string name="rules">Rules and Regulations</string>
+    <string name="price_month">Price (Rs. per month)</string>
+    <string name="address">Address</string>
+    <string name="submit_approval">Submit for Approval</string>
+    <string name="resubmit_approval">Resubmit for Approval</string>
+    <string name="delete_listing_title">Delete listing?</string>
+    <string name="delete_listing_message">\"%1$s\" will be permanently removed. This cannot be undone.</string>
+    <string name="visible_search">Visible in search</string>
+    <string name="marked_full">Marked as FULL (hidden from search)</string>
+    <string name="mark_full">Mark as Full</string>
+    <string name="mark_available">Mark as Available</string>
+    <string name="edit_resubmit">Edit &amp; Resubmit</string>
+    <string name="submit_success">Submitted! Waiting for admin approval.</string>
+    <string name="status_format">Status: %1$s</string>
+    <string name="reason_format">Reason: %1$s</string>
+    <string name="no_reason">No reason given</string>
 </resources>

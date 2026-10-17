@@ -10,11 +10,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.lk.lankaboardinghouse.android.R // <-- Make sure this import matches your package name
 import com.lk.lankaboardinghouse.android.data.model.UserResponse
 import com.lk.lankaboardinghouse.android.data.session.SessionManager
 import com.lk.lankaboardinghouse.android.ui.account.ChangePasswordScreen
@@ -24,7 +26,6 @@ import com.lk.lankaboardinghouse.android.ui.owner.OwnerDashboardScreen
 import com.lk.lankaboardinghouse.android.ui.register.RegisterScreen
 import com.lk.lankaboardinghouse.android.ui.user.UserDashboardScreen
 
-// Where the app should open: the user's dashboard if a session was restored, else Login
 fun startDestinationFor(user: UserResponse?): String = when (user?.role) {
     "ADMIN" -> Screen.AdminDashboard.route
     "OWNER" -> Screen.OwnerDashboard.route
@@ -32,7 +33,6 @@ fun startDestinationFor(user: UserResponse?): String = when (user?.role) {
     else -> Screen.Login.route
 }
 
-// Screens that show the "Change password" footer link
 private val DASHBOARD_ROUTES = setOf(
     Screen.AdminDashboard.route,
     Screen.OwnerDashboard.route,
@@ -46,16 +46,16 @@ fun AppNavGraph(
 ) {
     val navController: NavHostController = rememberNavController()
     val context = LocalContext.current
+    val sessionExpiredMsg = stringResource(R.string.session_expired)
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showAccountFooter = currentRoute != null && currentRoute in DASHBOARD_ROUTES
 
-    // If the network layer flags an expired/invalid token, send the user back to login
     LaunchedEffect(SessionManager.sessionExpired) {
         if (SessionManager.sessionExpired) {
             SessionManager.sessionExpired = false
-            Toast.makeText(context, "Session expired. Please log in again.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, sessionExpiredMsg, Toast.LENGTH_LONG).show()
             logout(navController)
         }
     }
@@ -125,7 +125,7 @@ fun AppNavGraph(
                 onClick = { navController.navigate(Screen.ChangePassword.route) },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("Change password")
+                Text(stringResource(R.string.change_password_footer))
             }
         }
     }
