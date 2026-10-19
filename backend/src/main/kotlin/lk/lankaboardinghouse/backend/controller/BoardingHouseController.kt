@@ -1,5 +1,6 @@
 package lk.lankaboardinghouse.backend.controller
 
+import jakarta.validation.Valid
 import lk.lankaboardinghouse.backend.dto.AvailabilityRequestDto
 import lk.lankaboardinghouse.backend.dto.BoardingHouseRequestDto
 import lk.lankaboardinghouse.backend.dto.BoardingHouseResponseDto
@@ -9,10 +10,16 @@ import lk.lankaboardinghouse.backend.model.BoardingHouseStatus
 import lk.lankaboardinghouse.backend.repository.BoardingHouseRepository
 import lk.lankaboardinghouse.backend.repository.TownRepository
 import lk.lankaboardinghouse.backend.repository.UserRepository
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/boarding-houses")
@@ -21,6 +28,13 @@ class BoardingHouseController(
     private val townRepository: TownRepository,
     private val userRepository: UserRepository
 ) {
+
+    companion object {
+        private const val MAX_PHOTOS = 5
+        private const val MAX_PHOTO_BYTES = 5L * 1024 * 1024 // 5 MB
+        private val ALLOWED_TYPES = setOf("image/jpeg", "image/png", "image/webp")
+        private val UPLOAD_DIR: java.nio.file.Path = Paths.get("uploads").toAbsolutePath().normalize()
+    }
 
     private fun toDto(b: BoardingHouse) = BoardingHouseResponseDto(
         id = b.id,
@@ -37,17 +51,16 @@ class BoardingHouseController(
         ownerPhone = b.owner.phoneNumber,
         status = b.status,
         declineReason = b.declineReason,
-        available = b.available
+        available = b.available,
+        photoUrls = b.photoUrls.toList()
     )
 
-    // The token's subject is the user id; make sure it matches the id in the request
     private fun requireSelf(authentication: Authentication, ownerId: Long) {
         if (authentication.name != ownerId.toString()) {
             throw AccessDeniedException("Not allowed to act for another user")
         }
     }
 
-    // Loads a listing and makes sure the logged-in owner really owns it
     private fun findOwnedListing(id: Long, authentication: Authentication): BoardingHouse {
         val existing = boardingHouseRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Boarding house not found") }
@@ -62,10 +75,18 @@ class BoardingHouseController(
     fun getAll(): List<BoardingHouseResponseDto> =
         boardingHouseRepository.findAll().map { toDto(it) }
 
+    // Single listing by id (any logged-in user)
+    @GetMapping("/{id}")
+    fun getOne(@PathVariable id: Long): BoardingHouseResponseDto {
+        val b = boardingHouseRepository.findById(id)
+            .orElseThrow { IllegalArgumentException("Boarding house not found") }
+        return toDto(b)
+    }
+
     // Owner submits a new listing request (status = PENDING)
     @PostMapping("/request")
     fun submitRequest(
-        @RequestBody dto: BoardingHouseRequestDto,
+        @Valid @RequestBody dto: BoardingHouseRequestDto,
         authentication: Authentication
     ): BoardingHouseResponseDto {
         requireSelf(authentication, dto.ownerId)
@@ -89,17 +110,22 @@ class BoardingHouseController(
         return toDto(boardingHouseRepository.save(boardingHouse))
     }
 
-    // Owner edits a DECLINED listing and resubmits it (status goes back to PENDING)
+    // Owner edits their own listing.
+    // - DECLINED listings return to PENDING (resubmit).
+    // - APPROVED listings return to PENDING so an admin re-approves the changes.
+    // - PENDING listings cannot be edited until admin acts on them.
     @PutMapping("/{id}")
-    fun resubmit(
+    fun edit(
         @PathVariable id: Long,
-        @RequestBody dto: BoardingHouseRequestDto,
+        @Valid @RequestBody dto: BoardingHouseRequestDto,
         authentication: Authentication
     ): BoardingHouseResponseDto {
         val existing = findOwnedListing(id, authentication)
 
-        if (existing.status != BoardingHouseStatus.DECLINED) {
-            throw IllegalArgumentException("Only declined listings can be edited and resubmitted")
+        if (existing.status == BoardingHouseStatus.PENDING) {
+            throw IllegalArgumentException(
+                "This listing is still pending review; wait for approval or decline before editing"
+            )
         }
 
         val town = townRepository.findById(dto.townId)
@@ -146,8 +172,57 @@ class BoardingHouseController(
         return ResponseEntity.noContent().build()
     }
 
+    // Owner uploads 1..N photos for their own listing.
+    // Multipart field name: "files". Max 5 files, 5 MB each, jpeg/png/webp only.
+    @PostMapping("/{id}/photos", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadPhotos(
+        @PathVariable id: Long,
+        @RequestParam("files") files: List<MultipartFile>,
+        authentication: Authentication
+    ): BoardingHouseResponseDto {
+        val existing = findOwnedListing(id, authentication)
+
+        if (files.isEmpty()) {
+            throw IllegalArgumentException("No files were uploaded")
+        }
+        if (existing.photoUrls.size + files.size > MAX_PHOTOS) {
+            throw IllegalArgumentException("A listing can have at most $MAX_PHOTOS photos")
+        }
+
+        Files.createDirectories(UPLOAD_DIR)
+
+        val newUrls = mutableListOf<String>()
+        for (file in files) {
+            if (file.isEmpty) {
+                throw IllegalArgumentException("One of the uploaded files is empty")
+            }
+            val contentType = file.contentType
+            if (contentType == null || contentType !in ALLOWED_TYPES) {
+                throw IllegalArgumentException(
+                    "Unsupported file type: $contentType. Allowed: jpeg, png, webp"
+                )
+            }
+            if (file.size > MAX_PHOTO_BYTES) {
+                throw IllegalArgumentException("Each photo must be 5 MB or smaller")
+            }
+
+            val ext = when (contentType) {
+                "image/jpeg" -> "jpg"
+                "image/png" -> "png"
+                "image/webp" -> "webp"
+                else -> "jpg"
+            }
+            val filename = "${UUID.randomUUID()}.$ext"
+            val target = UPLOAD_DIR.resolve(filename)
+            Files.copy(file.inputStream, target, StandardCopyOption.REPLACE_EXISTING)
+            newUrls.add("/uploads/$filename")
+        }
+
+        val updated = existing.copy(photoUrls = (existing.photoUrls + newUrls).toMutableList())
+        return toDto(boardingHouseRepository.save(updated))
+    }
+
     // Search approved, available listings in a town, with optional price range and sorting
-    // sort: "newest" (default), "price_asc", "price_desc"
     @GetMapping("/search")
     fun search(
         @RequestParam townId: Long,
