@@ -33,8 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lk.lankaboardinghouse.android.R
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +50,11 @@ fun OwnerDashboardScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val isEditing = viewModel.editingListingId != null
-    val tabs = listOf("My Listings", if (isEditing) "Edit Listing" else "Add New")
+
+    val tabMyListings = stringResource(R.string.my_listings)
+    val tabEdit = stringResource(R.string.edit_listing)
+    val tabAdd = stringResource(R.string.add_new)
+    val tabs = listOf(tabMyListings, if (isEditing) tabEdit else tabAdd)
 
     LaunchedEffect(Unit) {
         viewModel.loadMyListings(ownerId)
@@ -63,11 +69,11 @@ fun OwnerDashboardScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Welcome, $fullName",
+                text = stringResource(R.string.welcome_user, fullName),
                 style = MaterialTheme.typography.titleMedium
             )
             TextButton(onClick = onLogout) {
-                Text("Logout")
+                Text(stringResource(R.string.logout))
             }
         }
 
@@ -117,7 +123,7 @@ private fun MyListingsTab(
         }
         viewModel.myListings.isEmpty() -> {
             Text(
-                text = "You haven't submitted any boarding houses yet.",
+                text = stringResource(R.string.no_listings),
                 modifier = Modifier.padding(16.dp)
             )
         }
@@ -160,8 +166,8 @@ private fun ListingCard(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete listing?") },
-            text = { Text("\"${listing.title}\" will be permanently removed. This cannot be undone.") },
+            title = { Text(stringResource(R.string.delete_listing_title)) },
+            text = { Text(stringResource(R.string.delete_listing_message, listing.title)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -169,12 +175,12 @@ private fun ListingCard(
                         onDelete(listing.id)
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -184,15 +190,15 @@ private fun ListingCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = listing.title, style = MaterialTheme.typography.titleMedium)
             Text(text = "${listing.townName}, ${listing.districtName}")
-            Text(text = "Rs. ${listing.price.toInt()} / month")
+            Text(text = stringResource(R.string.price_format, listing.price.toInt()))
             Text(
-                text = "Status: ${listing.status}",
+                text = stringResource(R.string.status_format, listing.status),
                 style = MaterialTheme.typography.labelLarge
             )
 
             if (listing.status == "APPROVED") {
                 Text(
-                    text = if (listing.available) "Visible in search" else "Marked as FULL (hidden from search)",
+                    text = if (listing.available) stringResource(R.string.visible_search) else stringResource(R.string.marked_full),
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (listing.available) {
                         MaterialTheme.colorScheme.primary
@@ -204,7 +210,7 @@ private fun ListingCard(
 
             if (listing.status == "DECLINED") {
                 Text(
-                    text = "Reason: ${listing.declineReason ?: "No reason given"}",
+                    text = stringResource(R.string.reason_format, listing.declineReason ?: stringResource(R.string.no_reason)),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 8.dp)
@@ -220,19 +226,19 @@ private fun ListingCard(
                 ) {
                     if (listing.status == "APPROVED") {
                         OutlinedButton(onClick = { onToggleAvailability(listing) }) {
-                            Text(if (listing.available) "Mark as Full" else "Mark as Available")
+                            Text(if (listing.available) stringResource(R.string.mark_full) else stringResource(R.string.mark_available))
                         }
                     }
                     if (listing.status == "DECLINED") {
                         Button(onClick = { onEdit(listing) }) {
-                            Text("Edit & Resubmit")
+                            Text(stringResource(R.string.edit_resubmit))
                         }
                     }
                     TextButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -254,7 +260,7 @@ private fun AddNewListingTab(
         item {
             if (isEditing) {
                 Text(
-                    text = "Fix the issues the admin raised, then resubmit for approval.",
+                    text = stringResource(R.string.fix_issues_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -263,35 +269,35 @@ private fun AddNewListingTab(
             OutlinedTextField(
                 value = viewModel.title,
                 onValueChange = { viewModel.title = it },
-                label = { Text("Title") },
+                label = { Text(stringResource(R.string.title)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = viewModel.description,
                 onValueChange = { viewModel.description = it },
-                label = { Text("Description") },
+                label = { Text(stringResource(R.string.description)) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             OutlinedTextField(
                 value = viewModel.rulesAndRegulations,
                 onValueChange = { viewModel.rulesAndRegulations = it },
-                label = { Text("Rules and Regulations") },
+                label = { Text(stringResource(R.string.rules)) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             OutlinedTextField(
                 value = viewModel.price,
                 onValueChange = { viewModel.price = it },
-                label = { Text("Price (Rs. per month)") },
+                label = { Text(stringResource(R.string.price_month)) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             OutlinedTextField(
                 value = viewModel.addressLine,
                 onValueChange = { viewModel.addressLine = it },
-                label = { Text("Address") },
+                label = { Text(stringResource(R.string.address)) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
@@ -300,7 +306,7 @@ private fun AddNewListingTab(
                     onClick = { districtExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(viewModel.selectedDistrict?.name ?: "Select District")
+                    Text(viewModel.selectedDistrict?.name ?: stringResource(R.string.select_district))
                 }
                 DropdownMenu(
                     expanded = districtExpanded,
@@ -323,7 +329,7 @@ private fun AddNewListingTab(
                     onClick = { if (viewModel.towns.isNotEmpty()) townExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(viewModel.selectedTown?.name ?: "Select Town")
+                    Text(viewModel.selectedTown?.name ?: stringResource(R.string.select_town))
                 }
                 DropdownMenu(
                     expanded = townExpanded,
@@ -349,7 +355,7 @@ private fun AddNewListingTab(
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 is SubmitState.Success -> Text(
-                    text = "Submitted! Waiting for admin approval.",
+                    text = stringResource(R.string.submit_success),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp)
                 )
@@ -360,7 +366,7 @@ private fun AddNewListingTab(
                 onClick = { viewModel.submitListing(ownerId) },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
-                Text(if (isEditing) "Resubmit for Approval" else "Submit for Approval")
+                Text(if (isEditing) stringResource(R.string.resubmit_approval) else stringResource(R.string.submit_approval))
             }
 
             if (isEditing) {
@@ -368,7 +374,7 @@ private fun AddNewListingTab(
                     onClick = onCancelEdit,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         }

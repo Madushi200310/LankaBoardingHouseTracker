@@ -31,8 +31,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lk.lankaboardinghouse.android.R
 import com.lk.lankaboardinghouse.android.data.model.AdminUserDto
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 
@@ -46,7 +48,7 @@ fun AdminDashboardScreen(
     usersViewModel: AdminUsersViewModel = viewModel()
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    val tabs = listOf("Pending Listings", "Users")
+    val tabs = listOf(stringResource(R.string.pending_listings), stringResource(R.string.users))
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -57,16 +59,16 @@ fun AdminDashboardScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Admin Dashboard",
+                text = stringResource(R.string.admin_dashboard),
                 style = MaterialTheme.typography.headlineSmall
             )
             TextButton(onClick = onLogout) {
-                Text("Logout")
+                Text(stringResource(R.string.logout))
             }
         }
 
         Text(
-            text = "Welcome, $fullName",
+            text = stringResource(R.string.welcome_user, fullName),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
@@ -95,7 +97,7 @@ fun AdminDashboardScreen(
 private fun PendingListingsTab(viewModel: AdminViewModel) {
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "Pending Boarding House Requests",
+            text = stringResource(R.string.pending_requests),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(16.dp)
         )
@@ -119,7 +121,7 @@ private fun PendingListingsTab(viewModel: AdminViewModel) {
             }
             viewModel.pendingListings.isEmpty() -> {
                 Text(
-                    text = "No pending requests right now.",
+                    text = stringResource(R.string.no_pending),
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -143,7 +145,7 @@ private fun PendingListingsTab(viewModel: AdminViewModel) {
 private fun UsersTab(viewModel: AdminUsersViewModel) {
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "All Users",
+            text = stringResource(R.string.all_users),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(16.dp)
         )
@@ -168,7 +170,7 @@ private fun UsersTab(viewModel: AdminUsersViewModel) {
             }
             viewModel.users.isEmpty() -> {
                 Text(
-                    text = "No users found.",
+                    text = stringResource(R.string.no_users),
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -217,7 +219,7 @@ private fun UserCard(
             Text(text = user.phoneNumber, style = MaterialTheme.typography.bodyMedium)
 
             Text(
-                text = if (user.disabled) "Status: DISABLED" else "Status: Active",
+                text = stringResource(if (user.disabled) R.string.status_disabled else R.string.status_active),
                 style = MaterialTheme.typography.labelLarge,
                 color = if (user.disabled) {
                     MaterialTheme.colorScheme.error
@@ -227,7 +229,6 @@ private fun UserCard(
                 modifier = Modifier.padding(top = 8.dp)
             )
 
-            // Admin rows never show the toggle (backend also refuses to disable admins).
             if (user.role != "ADMIN") {
                 if (isProcessing) {
                     CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
@@ -235,7 +236,7 @@ private fun UserCard(
                     Row(modifier = Modifier.padding(top = 12.dp)) {
                         if (user.disabled) {
                             Button(onClick = { onToggleDisabled(false) }) {
-                                Text("Enable Account")
+                                Text(stringResource(R.string.enable_account))
                             }
                         } else {
                             OutlinedButton(
@@ -244,7 +245,7 @@ private fun UserCard(
                                     contentColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Text("Disable Account")
+                                Text(stringResource(R.string.disable_account))
                             }
                         }
                     }
@@ -267,12 +268,12 @@ private fun PendingListingCard(
     if (showDeclineDialog) {
         AlertDialog(
             onDismissRequest = { showDeclineDialog = false },
-            title = { Text("Decline listing") },
+            title = { Text(stringResource(R.string.decline_listing)) },
             text = {
                 OutlinedTextField(
                     value = reason,
                     onValueChange = { reason = it },
-                    label = { Text("Reason (the owner will see this)") },
+                    label = { Text(stringResource(R.string.decline_reason_hint)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -285,12 +286,12 @@ private fun PendingListingCard(
                         reason = ""
                     }
                 ) {
-                    Text("Decline")
+                    Text(stringResource(R.string.decline))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeclineDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -306,16 +307,16 @@ private fun PendingListingCard(
                 modifier = Modifier.padding(top = 8.dp)
             )
             Text(text = listing.addressLine)
-            Text(text = "Rs. ${listing.price.toInt()} / month")
+            Text(text = stringResource(R.string.price_format, listing.price.toInt()))
 
             Text(
-                text = "Rules: ${listing.rulesAndRegulations}",
+                text = stringResource(R.string.rules_format, listing.rulesAndRegulations),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
 
             Text(
-                text = "Owner: ${listing.ownerName} (${listing.ownerPhone})",
+                text = "Owner: ${listing.ownerName} (${listing.ownerPhone})", // Assuming you don't need to translate "Owner:" for now, or add to strings
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -328,7 +329,7 @@ private fun PendingListingCard(
                         onClick = onApprove,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Approve")
+                        Text(stringResource(R.string.approve))
                     }
                     OutlinedButton(
                         onClick = { showDeclineDialog = true },
@@ -337,7 +338,7 @@ private fun PendingListingCard(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Decline")
+                        Text(stringResource(R.string.decline))
                     }
                 }
             }

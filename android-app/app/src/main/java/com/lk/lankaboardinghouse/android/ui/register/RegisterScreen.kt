@@ -1,12 +1,12 @@
 package com.lk.lankaboardinghouse.android.ui.register
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -23,10 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lk.lankaboardinghouse.android.R
 import com.lk.lankaboardinghouse.android.data.model.UserResponse
 
 @Composable
@@ -46,7 +48,7 @@ fun RegisterScreen(
     ) {
         item {
             Text(
-                text = "Create an Account",
+                text = stringResource(R.string.create_account),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
@@ -54,46 +56,46 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = viewModel.fullName,
                 onValueChange = { viewModel.fullName = it },
-                label = { Text("Full Name") },
+                label = { Text(stringResource(R.string.full_name)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = viewModel.email,
                 onValueChange = { viewModel.email = it },
-                label = { Text("Email") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Email),
+                label = { Text(stringResource(R.string.email)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             OutlinedTextField(
                 value = viewModel.phoneNumber,
                 onValueChange = { viewModel.phoneNumber = it },
-                label = { Text("Phone Number") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone),
+                label = { Text(stringResource(R.string.phone_number)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             OutlinedTextField(
                 value = viewModel.password,
                 onValueChange = { viewModel.password = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             OutlinedTextField(
                 value = viewModel.confirmPassword,
                 onValueChange = { viewModel.confirmPassword = it },
-                label = { Text("Confirm Password") },
+                label = { Text(stringResource(R.string.confirm_password)) },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
             Text(
-                text = "I am a:",
+                text = stringResource(R.string.i_am_a),
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
             )
@@ -105,8 +107,8 @@ fun RegisterScreen(
                 ) {
                     Text(
                         when (viewModel.selectedRole) {
-                            "OWNER" -> "Boarding House Owner"
-                            else -> "Searching for a Boarding House"
+                            "OWNER" -> stringResource(R.string.role_owner)
+                            else -> stringResource(R.string.role_user)
                         }
                     )
                 }
@@ -115,14 +117,14 @@ fun RegisterScreen(
                     onDismissRequest = { roleExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Searching for a Boarding House") },
+                        text = { Text(stringResource(R.string.role_user)) },
                         onClick = {
                             viewModel.onRoleSelected("USER")
                             roleExpanded = false
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Boarding House Owner") },
+                        text = { Text(stringResource(R.string.role_owner)) },
                         onClick = {
                             viewModel.onRoleSelected("OWNER")
                             roleExpanded = false
@@ -157,7 +159,7 @@ fun RegisterScreen(
                 onClick = { viewModel.register() },
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
-                Text("Register")
+                Text(stringResource(R.string.register))
             }
 
             TextButton(
@@ -166,7 +168,7 @@ fun RegisterScreen(
                     .fillMaxWidth()
                     .padding(top = 8.dp)
             ) {
-                Text("Already have an account? Login")
+                Text(stringResource(R.string.already_have_account))
             }
         }
     }

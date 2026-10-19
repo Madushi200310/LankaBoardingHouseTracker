@@ -41,10 +41,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lk.lankaboardinghouse.android.R
 import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,7 +58,7 @@ fun UserDashboardScreen(
     viewModel: UserViewModel = viewModel()
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    val tabs = listOf("Search", "Favourites")
+    val tabs = listOf(stringResource(R.string.search), stringResource(R.string.favourites))
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -67,15 +69,15 @@ fun UserDashboardScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Find a Boarding House",
+                text = stringResource(R.string.find_boarding_house),
                 style = MaterialTheme.typography.headlineSmall
             )
             TextButton(onClick = onLogout) {
-                Text("Logout")
+                Text(stringResource(R.string.logout))
             }
         }
         Text(
-            text = "Welcome, $fullName",
+            text = stringResource(R.string.welcome_user, fullName),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
@@ -100,8 +102,6 @@ fun UserDashboardScreen(
     }
 }
 
-// ─── Search tab ──────────────────────────────────────────────────────────
-
 @Composable
 private fun SearchTab(viewModel: UserViewModel) {
     var districtExpanded by remember { mutableStateOf(false) }
@@ -115,7 +115,7 @@ private fun SearchTab(viewModel: UserViewModel) {
                     onClick = { districtExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(viewModel.selectedDistrict?.name ?: "Select District")
+                    Text(viewModel.selectedDistrict?.name ?: stringResource(R.string.select_district))
                 }
                 DropdownMenu(
                     expanded = districtExpanded,
@@ -138,7 +138,7 @@ private fun SearchTab(viewModel: UserViewModel) {
                     onClick = { if (viewModel.towns.isNotEmpty()) townExpanded = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(viewModel.selectedTown?.name ?: "Select Town")
+                    Text(viewModel.selectedTown?.name ?: stringResource(R.string.select_town))
                 }
                 DropdownMenu(
                     expanded = townExpanded,
@@ -156,13 +156,12 @@ private fun SearchTab(viewModel: UserViewModel) {
                 }
             }
 
-            // Filters appear once a town is chosen
             if (viewModel.selectedTown != null) {
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                     OutlinedTextField(
                         value = viewModel.minPrice,
                         onValueChange = { viewModel.minPrice = it },
-                        label = { Text("Min Rs.") },
+                        label = { Text(stringResource(R.string.min_rs)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
@@ -170,7 +169,7 @@ private fun SearchTab(viewModel: UserViewModel) {
                     OutlinedTextField(
                         value = viewModel.maxPrice,
                         onValueChange = { viewModel.maxPrice = it },
-                        label = { Text("Max Rs.") },
+                        label = { Text(stringResource(R.string.max_rs)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f).padding(start = 8.dp)
@@ -186,31 +185,39 @@ private fun SearchTab(viewModel: UserViewModel) {
                             onClick = { sortExpanded = true },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(viewModel.sortOption.label)
+                            val sortLabel = when (viewModel.sortOption) {
+                                SortOption.NEWEST -> stringResource(R.string.sort_newest)
+                                SortOption.PRICE_LOW_HIGH -> stringResource(R.string.sort_price_asc)
+                                SortOption.PRICE_HIGH_LOW -> stringResource(R.string.sort_price_desc)
+                            }
+                            Text(sortLabel)
                         }
                         DropdownMenu(
                             expanded = sortExpanded,
                             onDismissRequest = { sortExpanded = false }
                         ) {
-                            SortOption.entries.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.label) },
-                                    onClick = {
-                                        viewModel.onSortSelected(option)
-                                        sortExpanded = false
-                                    }
-                                )
-                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_newest)) },
+                                onClick = { viewModel.onSortSelected(SortOption.NEWEST); sortExpanded = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_price_asc)) },
+                                onClick = { viewModel.onSortSelected(SortOption.PRICE_LOW_HIGH); sortExpanded = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_price_desc)) },
+                                onClick = { viewModel.onSortSelected(SortOption.PRICE_HIGH_LOW); sortExpanded = false }
+                            )
                         }
                     }
                     Button(
                         onClick = { viewModel.search() },
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        Text("Apply")
+                        Text(stringResource(R.string.apply))
                     }
                     TextButton(onClick = { viewModel.clearFilters() }) {
-                        Text("Clear")
+                        Text(stringResource(R.string.clear))
                     }
                 }
             }
@@ -235,7 +242,7 @@ private fun SearchTab(viewModel: UserViewModel) {
             }
             viewModel.hasSearched && viewModel.searchResults.isEmpty() -> {
                 Text(
-                    text = "No boarding houses match your search.",
+                    text = stringResource(R.string.no_results),
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -243,7 +250,7 @@ private fun SearchTab(viewModel: UserViewModel) {
                 LazyColumn(contentPadding = PaddingValues(16.dp)) {
                     item {
                         Text(
-                            text = "${viewModel.searchResults.size} boarding house(s) found",
+                            text = stringResource(R.string.results_found, viewModel.searchResults.size),
                             style = MaterialTheme.typography.labelLarge,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -260,7 +267,7 @@ private fun SearchTab(viewModel: UserViewModel) {
             }
             else -> {
                 Text(
-                    text = "Select a district and town to search for boarding houses.",
+                    text = stringResource(R.string.select_to_search),
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -268,13 +275,11 @@ private fun SearchTab(viewModel: UserViewModel) {
     }
 }
 
-// ─── Favourites tab ──────────────────────────────────────────────────────
-
 @Composable
 private fun FavouritesTab(viewModel: UserViewModel) {
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
-            text = "Your Favourites",
+            text = stringResource(R.string.your_favourites),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(16.dp)
         )
@@ -299,7 +304,7 @@ private fun FavouritesTab(viewModel: UserViewModel) {
             }
             viewModel.favourites.isEmpty() -> {
                 Text(
-                    text = "You haven't saved any boarding houses yet. Tap the heart on a listing to save it.",
+                    text = stringResource(R.string.no_favourites),
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -318,8 +323,6 @@ private fun FavouritesTab(viewModel: UserViewModel) {
         }
     }
 }
-
-// ─── Shared card ─────────────────────────────────────────────────────────
 
 @Composable
 private fun SearchResultCard(
@@ -351,7 +354,7 @@ private fun SearchResultCard(
                             } else {
                                 Icons.Filled.FavoriteBorder
                             },
-                            contentDescription = if (isFavourite) "Remove from favourites" else "Add to favourites",
+                            contentDescription = null, // Accessibility string could go here
                             tint = if (isFavourite) {
                                 MaterialTheme.colorScheme.error
                             } else {
@@ -369,10 +372,10 @@ private fun SearchResultCard(
                 modifier = Modifier.padding(top = 8.dp)
             )
             Text(text = listing.addressLine)
-            Text(text = "Rs. ${listing.price.toInt()} / month")
+            Text(text = stringResource(R.string.price_format, listing.price.toInt()))
 
             Text(
-                text = "Rules: ${listing.rulesAndRegulations}",
+                text = stringResource(R.string.rules_format, listing.rulesAndRegulations),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
@@ -382,13 +385,13 @@ private fun SearchResultCard(
                     onClick = { dialOwner(context, listing.ownerPhone) },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Call")
+                    Text(stringResource(R.string.call))
                 }
                 OutlinedButton(
                     onClick = { whatsAppOwner(context, listing.ownerPhone) },
                     modifier = Modifier.weight(1f).padding(start = 8.dp)
                 ) {
-                    Text("WhatsApp")
+                    Text(stringResource(R.string.whatsapp))
                 }
             }
         }
