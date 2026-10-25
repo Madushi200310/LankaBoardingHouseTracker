@@ -1,17 +1,23 @@
 package com.lk.lankaboardinghouse.android.navigation
 
 import android.widget.Toast
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
 import com.lk.lankaboardinghouse.android.data.model.UserResponse
+import com.lk.lankaboardinghouse.android.data.remote.RetrofitClient
 import com.lk.lankaboardinghouse.android.data.session.SessionManager
 import com.lk.lankaboardinghouse.android.ui.admin.AdminDashboardScreen
+import com.lk.lankaboardinghouse.android.ui.common.ListingDetailScreen
 import com.lk.lankaboardinghouse.android.ui.login.LoginScreen
 import com.lk.lankaboardinghouse.android.ui.owner.OwnerDashboardScreen
 import com.lk.lankaboardinghouse.android.ui.register.RegisterScreen
@@ -22,7 +28,6 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
     val navController: NavHostController = rememberNavController()
     val context = LocalContext.current
 
-    // If the network layer flags an expired/invalid token, send the user back to login
     LaunchedEffect(SessionManager.sessionExpired) {
         if (SessionManager.sessionExpired) {
             SessionManager.sessionExpired = false
@@ -72,7 +77,11 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             OwnerDashboardScreen(
                 ownerId = user?.id ?: 0L,
                 fullName = user?.fullName ?: "Owner",
-                onLogout = { logout(navController) }
+                onLogout = { logout(navController) },
+                onViewDetails = { listing ->
+                    // THIS FIXES THE ERROR: Pass the callback to navigate to the detail screen
+                    navController.navigate(Screen.ListingDetail.createRoute(listing.id))
+                }
             )
         }
 
@@ -81,6 +90,45 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 fullName = SessionManager.currentUser?.fullName ?: "User",
                 onLogout = { logout(navController) }
             )
+        }
+
+        // NEW: The Detail Screen Route
+        composable(
+            route = Screen.ListingDetail.route,
+            arguments = listOf(navArgument("listingId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments?.getLong("listingId")
+            var listing by remember { mutableStateOf<BoardingHouseResponseDto?>(null) }
+            var isLoading by remember { mutableStateOf(true) }
+
+            // Fetch the listing details by ID
+            LaunchedEffect(listingId) {
+                if (listingId != null && listingId != 0L) {
+                    try {
+                        // We fetch the owner's listings and find the one that matches the ID
+                        val response = RetrofitClient.apiService.getOwnerListings(SessionManager.currentUser?.id ?: 0L)
+                        if (response.isSuccessful) {
+                            listing = response.body()?.find { it.id == listingId }
+                        }
+                    } catch (e: Exception) {
+                        // Handle error
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            }
+
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.fillMaxSize())
+            } else if (listing != null) {
+                ListingDetailScreen(
+                    listing = listing!!,
+                    onBack = { navController.popBackStack() }
+                )
+            } else {
+                Toast.makeText(context, "Listing not found", Toast.LENGTH_SHORT).show()
+                navController.popBackStack()
+            }
         }
     }
 }

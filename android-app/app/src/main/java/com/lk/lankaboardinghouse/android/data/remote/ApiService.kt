@@ -1,22 +1,9 @@
 package com.lk.lankaboardinghouse.android.data.remote
 
-import com.lk.lankaboardinghouse.android.data.model.AvailabilityRequest
-import com.lk.lankaboardinghouse.android.data.model.BoardingHouseRequestDto
-import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
-import com.lk.lankaboardinghouse.android.data.model.DeclineRequest
-import com.lk.lankaboardinghouse.android.data.model.DistrictDto
-import com.lk.lankaboardinghouse.android.data.model.LoginRequest
-import com.lk.lankaboardinghouse.android.data.model.RegisterRequest
-import com.lk.lankaboardinghouse.android.data.model.TownDto
-import com.lk.lankaboardinghouse.android.data.model.UserResponse
+import com.lk.lankaboardinghouse.android.data.model.*
+import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 
 interface ApiService {
 
@@ -53,7 +40,6 @@ interface ApiService {
     @GET("api/boarding-houses/owner/{ownerId}")
     suspend fun getOwnerListings(@Path("ownerId") ownerId: Long): Response<List<BoardingHouseResponseDto>>
 
-    // Null query parameters are left out of the request by Retrofit
     @GET("api/boarding-houses/search")
     suspend fun searchBoardingHouses(
         @Query("townId") townId: Long,
@@ -72,5 +58,13 @@ interface ApiService {
     suspend fun declineBoardingHouse(
         @Path("id") id: Long,
         @Body request: DeclineRequest
+    ): Response<BoardingHouseResponseDto>
+
+    // --- NEW: Upload Photos Endpoint ---
+    @Multipart
+    @POST("api/boarding-houses/{id}/photos")
+    suspend fun uploadPhotos(
+        @Path("id") id: Long,
+        @Part files: List<MultipartBody.Part>
     ): Response<BoardingHouseResponseDto>
 }

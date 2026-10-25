@@ -1,17 +1,18 @@
 package com.lk.lankaboardinghouse.android.ui.owner
 
+import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lk.lankaboardinghouse.android.data.model.AvailabilityRequest
-import com.lk.lankaboardinghouse.android.data.model.BoardingHouseRequestDto
-import com.lk.lankaboardinghouse.android.data.model.BoardingHouseResponseDto
-import com.lk.lankaboardinghouse.android.data.model.DistrictDto
-import com.lk.lankaboardinghouse.android.data.model.TownDto
+import com.lk.lankaboardinghouse.android.data.model.*
 import com.lk.lankaboardinghouse.android.data.remote.RetrofitClient
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 sealed class SubmitState {
     object Idle : SubmitState()
@@ -29,6 +30,9 @@ class OwnerViewModel : ViewModel() {
     var price by mutableStateOf("")
     var addressLine by mutableStateOf("")
 
+    // NEW: Selected Photos
+    var selectedPhotoUris by mutableStateOf<List<Uri>>(emptyList())
+
     var districts by mutableStateOf<List<DistrictDto>>(emptyList())
         private set
     var towns by mutableStateOf<List<TownDto>>(emptyList())
@@ -45,12 +49,12 @@ class OwnerViewModel : ViewModel() {
         private set
     var listingsLoading by mutableStateOf(false)
         private set
+    var listingsError by mutableStateOf<String?>(null)
+        private set
 
-    // Non-null while the owner is editing a declined listing to resubmit it
     var editingListingId by mutableStateOf<Long?>(null)
         private set
 
-    // Used by "mark as full" and "delete" on a listing card
     var actionInProgressId by mutableStateOf<Long?>(null)
         private set
     var actionError by mutableStateOf<String?>(null)
@@ -60,6 +64,16 @@ class OwnerViewModel : ViewModel() {
         loadDistricts()
     }
 
+    fun addPhotoUri(uri: Uri) {
+        if (selectedPhotoUris.size < 5) {
+            selectedPhotoUris = selectedPhotoUris + uri
+        }
+    }
+
+    fun removePhotoUri(uri: Uri) {
+        selectedPhotoUris = selectedPhotoUris - uri
+    }
+
     private fun loadDistricts() {
         viewModelScope.launch {
             try {
@@ -67,9 +81,7 @@ class OwnerViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     districts = response.body() ?: emptyList()
                 }
-            } catch (_: Exception) {
-                // Silently fail for now
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -83,9 +95,7 @@ class OwnerViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     towns = response.body() ?: emptyList()
                 }
-            } catch (_: Exception) {
-                // Silently fail for now
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -93,7 +103,6 @@ class OwnerViewModel : ViewModel() {
         selectedTown = town
     }
 
-    // Fill the form with a declined listing so the owner can fix it and resubmit
     fun startEdit(listing: BoardingHouseResponseDto) {
         editingListingId = listing.id
         title = listing.title
@@ -102,6 +111,7 @@ class OwnerViewModel : ViewModel() {
         price = if (listing.price % 1.0 == 0.0) listing.price.toLong().toString() else listing.price.toString()
         addressLine = listing.addressLine
         submitState = SubmitState.Idle
+        selectedPhotoUris = emptyList()
 
         val district = districts.find { it.id == listing.districtId }
         selectedDistrict = district
@@ -116,9 +126,7 @@ class OwnerViewModel : ViewModel() {
                         towns = response.body() ?: emptyList()
                         selectedTown = towns.find { it.id == listing.townId }
                     }
-                } catch (_: Exception) {
-                    // Owner can pick the town manually
-                }
+                } catch (_: Exception) {}
             }
         }
     }
@@ -129,7 +137,7 @@ class OwnerViewModel : ViewModel() {
         submitState = SubmitState.Idle
     }
 
-    fun submitListing(ownerId: Long) {
+    fun submitListing(ownerId: Long, context: Context) {
         val priceValue = price.toDoubleOrNull()
         val town = selectedTown
 
@@ -154,6 +162,7 @@ class OwnerViewModel : ViewModel() {
                     townId = town.id,
                     ownerId = ownerId
                 )
+
                 val response = if (editingId != null) {
                     RetrofitClient.apiService.resubmitBoardingHouse(editingId, request)
                 } else {
@@ -161,6 +170,21 @@ class OwnerViewModel : ViewModel() {
                 }
 
                 if (response.isSuccessful) {
+                    val savedListing = response.body()
+                    if (savedListing != null && selectedPhotoUris.isNotEmpty()) {
+                        // Upload photos
+                        val parts = selectedPhotoUris.mapNotNull { uri ->
+                            val inputStream = context.contentResolver.openInputStream(uri)
+                            val bytes = inputStream?.readBytes()
+                            inputStream?.close()
+                            if (bytes != null) {
+                                val reqFile = bytes.toRequestBody("image/*".toMediaTypeOrNull())
+                                MultipartBody.Part.createFormData("files", "photo.jpg", reqFile)
+                            } else null
+                        }
+                        RetrofitClient.apiService.uploadPhotos(savedListing.id, parts)
+                    }
+
                     submitState = SubmitState.Success
                     editingListingId = null
                     clearForm()
@@ -187,25 +211,28 @@ class OwnerViewModel : ViewModel() {
         selectedDistrict = null
         selectedTown = null
         towns = emptyList()
+        selectedPhotoUris = emptyList()
     }
 
     fun loadMyListings(ownerId: Long) {
         listingsLoading = true
+        listingsError = null
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.apiService.getOwnerListings(ownerId)
                 if (response.isSuccessful) {
                     myListings = response.body() ?: emptyList()
+                } else {
+                    listingsError = "Failed to load listings"
                 }
-            } catch (_: Exception) {
-                // Silently fail for now
+            } catch (e: Exception) {
+                listingsError = "Could not connect to server: ${e.message}"
             } finally {
                 listingsLoading = false
             }
         }
     }
 
-    // Mark an approved listing as full (hidden from search) or available again
     fun toggleAvailability(listing: BoardingHouseResponseDto) {
         actionInProgressId = listing.id
         actionError = null

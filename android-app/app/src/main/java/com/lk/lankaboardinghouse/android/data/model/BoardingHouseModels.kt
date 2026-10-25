@@ -33,5 +33,6 @@ data class BoardingHouseResponseDto(
     val ownerPhone: String,
     val status: String,
     val declineReason: String?,
-    val available: Boolean
+    val available: Boolean,
+    val photoUrls: List<String> = emptyList() // <-- ADDED THIS
 )
